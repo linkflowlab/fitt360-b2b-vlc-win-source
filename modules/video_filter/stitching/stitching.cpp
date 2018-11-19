@@ -1,6 +1,3 @@
-/*****************************************************************************
- * Preamble
- *****************************************************************************/
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -47,11 +44,8 @@ vlc_module_begin ()
 vlc_module_end ()
 
 typedef struct {
-    image_handler_t* p_image;
-
-    picture_t *p_proc_image;
-
-    Mat frame;
+    image_handler_t* p_image_handle;
+    picture_t* p_proc_image;
 } filter_sys_t;
 
 static int Create( vlc_object_t *p_this )
@@ -79,7 +73,7 @@ static int Create( vlc_object_t *p_this )
 
     p_filter->p_sys = p_sys;
     p_filter->pf_video_filter = Filter;
-    p_sys->p_image = image_HandlerCreate( p_filter );
+    p_sys->p_image_handle = image_HandlerCreate( p_filter );
     p_sys->p_proc_image = NULL;
 
     return VLC_SUCCESS;
@@ -95,14 +89,19 @@ static void Destroy( vlc_object_t *p_this )
 
 static void ReleaseImages( filter_t* p_filter )
 {
+    filter_sys_t* p_sys = (filter_sys_t*)p_filter->p_sys;
+    if(p_sys->p_proc_image) {
+        picture_Release(p_sys->p_proc_image);
+        p_sys->p_proc_image = NULL;
+    }
 }
 
-static void PictureToMat( filter_t* p_filter, picture_t* p_in, picture_t* p_out)
+static void PictureToBGRMat( filter_t* p_filter, picture_t* p_in, Mat& m)
 {
     filter_sys_t* p_sys = (filter_sys_t *)p_filter->p_sys;
 
-    if(!p_out) {
-        msg_Err( p_filter, "couldn't get a p_outpic!" );
+    if(!p_in) {
+        msg_Err( p_filter, "couldn't get a p_in!" );
         return;
     }
 
@@ -114,7 +113,7 @@ static void PictureToMat( filter_t* p_filter, picture_t* p_in, picture_t* p_out)
     fmt_out = p_in->format;
     fmt_out.i_chroma = VLC_CODEC_RGB24;
 
-    p_sys->p_proc_image = image_Convert(p_sys->p_image, p_in, &(p_in->format), &fmt_out );
+    p_sys->p_proc_image = image_Convert(p_sys->p_image_handle, p_in, &(p_in->format), &fmt_out );
 
     if (!p_sys->p_proc_image)
     {
@@ -122,20 +121,38 @@ static void PictureToMat( filter_t* p_filter, picture_t* p_in, picture_t* p_out)
         return;
     }
 
-    Mat frame = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
-    //cvtColor(frame, frame, CV_RGB2BGR);
-
-    picture_CopyPixels( p_out, p_sys->p_proc_image );
-    picture_CopyProperties( p_out, p_sys->p_proc_image );
+    m = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
+    cvtColor(m, m, CV_RGB2BGR);
 }
 
-/*****************************************************************************
- * Render: displays previously rendered output
- *****************************************************************************
- * This function send the currently rendered image to Mirror image, waits
- * until it is displayed and switch the two rendering buffers, preparing next
- * frame.
- *****************************************************************************/
+static void PrepareResultPicture(filter_t* p_filter, picture_t* ref_pic, picture_t* out_pic)
+{
+    filter_sys_t* p_sys = (filter_sys_t *)p_filter->p_sys;
+
+    if(!ref_pic || !out_pic) {
+        msg_Err( p_filter, "No input pictures" );
+        return;
+    }
+
+    Size sz = Size(out_pic->format.i_width, out_pic->format.i_height);
+    Mat p = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
+    cvtColor(p, p, CV_BGR2RGB);
+
+    video_format_t fmt_out;
+    memset( &fmt_out, 0, sizeof(video_format_t));
+    fmt_out = ref_pic->format;
+
+    picture_t* p_outpic_tmp = image_Convert(
+            p_sys->p_image_handle,
+            p_sys->p_proc_image,
+            &(p_sys->p_proc_image->format),
+            &fmt_out );
+
+    picture_CopyPixels( out_pic, p_outpic_tmp );
+    CopyInfoAndRelease( out_pic, p_outpic_tmp );
+}
+
+
 static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
 {
     filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
@@ -148,12 +165,12 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
         return NULL;
     }
 
-    //printf("Planes: %d Width %d, Height %d\n", p_pic->i_planes, p_pic->format.i_width, p_pic->format.i_height);
-    //PictureToMat(p_filter, p_pic, p_outpic);
+    Mat frame;
+    PictureToBGRMat(p_filter, p_pic, frame);
+    putText(frame, "LINKFLOW", Point(100, 100), 2, 1.2, Scalar::all(255));
+    PrepareResultPicture(p_filter, p_pic, p_outpic);
 
-    picture_CopyPixels( p_outpic, p_pic);
-    picture_CopyProperties( p_outpic, p_pic);
-
+    ReleaseImages(p_filter);
     picture_Release(p_pic);
     return p_outpic;
 }
