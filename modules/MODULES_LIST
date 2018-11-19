@@ -370,6 +370,7 @@ $Id$
  * spudec: RLE DVD subtitles decoder
  * stats: Stats encoder function
  * stereo_widen: Enhances stereo effect
+ * stitching: Front/Rear Stitching library for LINKFLOW
  * stl: EBU STL decoder
  * stream_out_autodel: monitor mux inputs and automatically add/delete streams
  * stream_out_bridge: "exchange" streams between sout instances. To be used with VLM
