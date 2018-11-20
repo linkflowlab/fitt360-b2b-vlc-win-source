@@ -1823,6 +1823,15 @@ LIBVLC_API void libvlc_video_set_deinterlace( libvlc_media_player_t *p_mi,
                                               const char *psz_mode );
 
 /**
+ * Enable or disable stitching filter
+ *
+ * \param p_mi libvlc media player
+ * \param enable state 0: disabled, 1: enabled
+ * \version LibVLC 4.0.0 and later
+ */
+LIBVLC_API void libvlc_video_set_stitching( libvlc_media_player_t *p_mi, int enable );
+
+/**
  * Get an integer marquee option value
  *
  * \param p_mi libvlc media player
