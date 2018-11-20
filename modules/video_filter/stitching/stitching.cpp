@@ -67,8 +67,8 @@ void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight
     RTSP_SrcHeight = srcHeight;
 
     // FITT360 Device adaption
-    // On SD resolution, we apply 16 pix offset and turn off minimizing ROI(cannot get feature with ORB due to too small image size. With SURF, it's OK)
-    if(RTSP_SrcWidth == 720 && RTSP_SrcHeight == 482) {
+    // If bandwidth is under 0.5Mpx, we don't limit feature detection region
+    if(RTSP_SrcWidth*RTSP_SrcHeight < 5 * 1e5) {
         if(features_type.compare("orb") == 0) {
             applyROItoFeatureDetection = false;
         }
@@ -84,10 +84,6 @@ void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight
     //Buffer allocation
     RTSPframe = Mat::zeros (RTSP_SrcHeight, RTSP_SrcWidth, CV_8UC3);
     RTSPframe_result = Mat::zeros (OutHeight, OutWidth, CV_8UC3);
-    partFrames[0].create(RTSP_SrcHeight/2 - padding, RTSP_SrcWidth/2 - padding, CV_8UC3);
-    partFrames[1].create(RTSP_SrcHeight/2 - padding, RTSP_SrcWidth/2 - padding, CV_8UC3);
-    partFrames[2].create(RTSP_SrcHeight/2 - padding, RTSP_SrcWidth/2 - padding, CV_8UC3);
-    partFrames[3].create(RTSP_SrcHeight/2 - padding, RTSP_SrcWidth/2 - padding, CV_8UC3);
 }
 
 void RunStreamStitcher()
@@ -103,12 +99,6 @@ void RunStreamStitcher()
 
 void BindStreamStitcherInputBuf(unsigned char* ptr)
 {
-    // _GetRecentFrame에서 비디오 입력을 RTSPframe으로 다이렉트로 받는 경우 ptr에 NULL을 입력하여 partFrame 할당 코드만 적용되도록 한다.
-    if(ptr != NULL) {
-        srcBuf = ptr;
-        RTSPframe = Mat(Size(RTSP_SrcWidth, RTSP_SrcHeight), CV_8UC3, srcBuf, Mat::AUTO_STEP);
-    }
-
     // subMat은 buffer의 물리적인 주소에 dependent하므로, 데이터의 위치가 셋업 된 이후에 subMat을 설정해주어야 한다.
     partFrames[0] = RTSPframe(cv::Rect(padding, padding, RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
     partFrames[1] = RTSPframe(cv::Rect(RTSPframe.cols/2, padding, RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
@@ -198,7 +188,7 @@ void FrameRender()
         Render(FRONT, input, RTSPframe_result);
         mtxFrontDraw.unlock();
     } else {
-        //RTSPframe.copyTo(RTSPframe_result(cv::Rect(Point(0, 0) ,Size(RTSPframe.cols, RTSPframe.rows/2))));
+        RTSPframe(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2)).copyTo(RTSPframe_result(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2)));
     }
 
     if(isParamAvailable[REAR]) {
@@ -207,7 +197,7 @@ void FrameRender()
         Render(REAR, input, RTSPframe_result);
         mtxRearDraw.unlock();
     } else {
-        //RTSPframe.copyTo(RTSPframe_result(cv::Rect(Point(0, OutHeight/2) ,Size(RTSPframe.cols, RTSPframe.rows/2))));
+        RTSPframe(Rect(0, OutHeight/2, RTSPframe.cols, RTSPframe.rows/2)).copyTo(RTSPframe_result(Rect(0, OutHeight/2, RTSPframe.cols, RTSPframe.rows/2)));
     }
 
     if(bFaceDetect) {
@@ -256,7 +246,7 @@ static int Create( vlc_object_t *p_this )
     p_sys->p_image_handle = image_HandlerCreate( p_filter );
     p_sys->p_proc_image = NULL;
 
-    printf("Plugin created\n");
+    printf("Stitching plugin created\n");
 
     return VLC_SUCCESS;
 }
@@ -383,6 +373,7 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
 
     filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
 
+    // Make OpenCV mat from picture and allocate separately
     isFrameAvailable = false;
     mtxBuf.lock();
     PictureToBGRMat(p_filter, p_pic, RTSPframe);
@@ -390,11 +381,12 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
     mtxBuf.unlock();
     isFrameAvailable = true;
 
-    printf("frame: %d\n", frame++);
+    //printf("frame: %d\n", frame++);
     FrameRender();
+
     PrepareResultPicture(p_filter, p_pic, p_outpic);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     ReleaseImages(p_filter);
     picture_Release(p_pic);
