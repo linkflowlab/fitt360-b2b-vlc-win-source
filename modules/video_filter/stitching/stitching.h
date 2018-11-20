@@ -40,7 +40,7 @@ static bool bFaceDetect = false;
 
 void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight, string fType, int interval = 2000/*recalculation interval in ms*/, bool bFaceDetectON = false);
 void RunStreamStitcher();
-void BindStreamStitcherInputBuf(unsigned char* ptr = NULL);
+void BindStreamStitcherInputBuf();
 
 // Internal Rendering routine for stitching front & rear and merge it to one
 void FrameRender();
