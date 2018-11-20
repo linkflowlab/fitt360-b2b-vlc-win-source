@@ -55,6 +55,7 @@ vlc_module_end ()
 typedef struct {
     image_handler_t* p_image_handle;
     picture_t* p_proc_image;
+    picture_t* p_dest_image;
 } filter_sys_t;
 
 void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight, string fType, int interval, bool bFaceDetectON)
@@ -97,7 +98,7 @@ void RunStreamStitcher()
         InitFaceDetectionAndGetRef(faceDetectThread);
 }
 
-void BindStreamStitcherInputBuf(unsigned char* ptr)
+void BindStreamStitcherInputBuf()
 {
     // subMat은 buffer의 물리적인 주소에 dependent하므로, 데이터의 위치가 셋업 된 이후에 subMat을 설정해주어야 한다.
     partFrames[0] = RTSPframe(cv::Rect(padding, padding, RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
@@ -245,6 +246,7 @@ static int Create( vlc_object_t *p_this )
     p_filter->pf_video_filter = Filter;
     p_sys->p_image_handle = image_HandlerCreate( p_filter );
     p_sys->p_proc_image = NULL;
+    p_sys->p_dest_image = NULL;
 
     printf("Stitching plugin created\n");
 
@@ -276,6 +278,15 @@ static void Destroy( vlc_object_t *p_this )
     DeallocAllParam(FRONT);
     DeallocAllParam(REAR);
 
+    if(p_sys->p_proc_image) {
+        picture_Release(p_sys->p_proc_image);
+        p_sys->p_proc_image = NULL;
+    }
+    if(p_sys->p_dest_image) {
+        picture_Release(p_sys->p_dest_image);
+        p_sys->p_dest_image = NULL;
+    }
+
     RTSPframe.release();
     RTSPframe_result.release();
 
@@ -288,13 +299,14 @@ static void Destroy( vlc_object_t *p_this )
 static void ReleaseImages( filter_t* p_filter )
 {
     filter_sys_t* p_sys = (filter_sys_t*)p_filter->p_sys;
-    if(p_sys->p_proc_image) {
-        picture_Release(p_sys->p_proc_image);
-        p_sys->p_proc_image = NULL;
+    if(p_sys->p_dest_image) {
+        picture_Release(p_sys->p_dest_image);
+        p_sys->p_dest_image = NULL;
     }
+    RTSPframe_result.release();
 }
 
-static void PictureToBGRMat( filter_t* p_filter, picture_t* p_in, Mat& m)
+static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
 {
     filter_sys_t* p_sys = (filter_sys_t *)p_filter->p_sys;
 
@@ -311,6 +323,13 @@ static void PictureToBGRMat( filter_t* p_filter, picture_t* p_in, Mat& m)
     fmt_out = p_in->format;
     fmt_out.i_chroma = VLC_CODEC_RGB24;
 
+    // Release previous memory
+    if(p_sys->p_proc_image) {
+        picture_Release(p_sys->p_proc_image);
+        p_sys->p_proc_image = NULL;
+    }
+    RTSPframe.release();
+
     p_sys->p_proc_image = image_Convert(p_sys->p_image_handle, p_in, &(p_in->format), &fmt_out );
 
     if (!p_sys->p_proc_image)
@@ -319,8 +338,7 @@ static void PictureToBGRMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         return;
     }
 
-    Mat tmp = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
-    cvtColor(tmp, m, CV_RGB2BGR);
+    m = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
 }
 
 static void PrepareResultPicture(filter_t* p_filter, picture_t* ref_pic, picture_t* out_pic)
@@ -332,23 +350,37 @@ static void PrepareResultPicture(filter_t* p_filter, picture_t* ref_pic, picture
         return;
     }
 
-    Size sz = Size(out_pic->format.i_width, out_pic->format.i_height);
-    Mat p = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
-    RTSPframe_result.copyTo(p);
-    cvtColor(p, p, CV_BGR2RGB);
-
     video_format_t fmt_out;
     memset( &fmt_out, 0, sizeof(video_format_t));
     fmt_out = ref_pic->format;
 
+    // RGB -> YUV
     picture_t* p_outpic_tmp = image_Convert(
             p_sys->p_image_handle,
-            p_sys->p_proc_image,
-            &(p_sys->p_proc_image->format),
+            p_sys->p_dest_image,
+            &(p_sys->p_dest_image->format),
             &fmt_out );
 
     picture_CopyPixels( out_pic, p_outpic_tmp );
     CopyInfoAndRelease( out_pic, p_outpic_tmp );
+}
+
+static void PrepareDestPicture(filter_t* p_filter, picture_t* ref_pic, Mat& m)
+{
+    filter_sys_t* p_sys = (filter_sys_t *)p_filter->p_sys;
+    if(!ref_pic) {
+        msg_Err( p_filter, "couldn't get a reference pic!" );
+        return;
+    }
+
+    video_format_t fmt_out;
+    memset( &fmt_out, 0, sizeof(video_format_t) );
+    fmt_out = ref_pic->format;
+    fmt_out.i_chroma = VLC_CODEC_RGB24;
+
+    p_sys->p_dest_image = picture_NewFromFormat(&fmt_out);
+    Size sz = Size(fmt_out.i_width, fmt_out.i_height);
+    m = Mat(sz, CV_8UC3, p_sys->p_dest_image->p[0].p_pixels);
 }
 
 static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
@@ -373,23 +405,32 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
 
     filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
 
-    // Make OpenCV mat from picture and allocate separately
     isFrameAvailable = false;
     mtxBuf.lock();
-    PictureToBGRMat(p_filter, p_pic, RTSPframe);
+    // Make OpenCV mat from picture and allocate separately
+    PictureToRGBMat(p_filter, p_pic, RTSPframe);
+    // Set separated sub mat of each camera
     BindStreamStitcherInputBuf();
     mtxBuf.unlock();
     isFrameAvailable = true;
 
-    //printf("frame: %d\n", frame++);
+    // Prepare dest picture on which we draw
+    PrepareDestPicture(p_filter, p_pic, RTSPframe_result);
+
+    // Render scene of current input
     FrameRender();
 
+    // Make output picture(YUV) from dest picture(RGB)
     PrepareResultPicture(p_filter, p_pic, p_outpic);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
+    // Release current output buffer and Mat
     ReleaseImages(p_filter);
+
+    // Release picture in order to get next picture
     picture_Release(p_pic);
+
+    // Print frame count
+    //printf("frame: %d\n", frame++);
     return p_outpic;
 }
 
