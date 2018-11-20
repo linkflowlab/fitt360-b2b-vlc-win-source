@@ -1304,6 +1304,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="stitchingEnable">
+        <property name="text">
+         <string>Stitching</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="psychedelicEnable">
         <property name="text">
          <string>Psychedelic</string>
