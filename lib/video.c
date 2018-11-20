@@ -633,6 +633,21 @@ void libvlc_video_set_deinterlace( libvlc_media_player_t *p_mi, int deinterlace,
     free (pp_vouts);
 }
 
+/******************************************************************************
+ * libvlc_video_set_stitching : enable/disable stitching and filter
+ *****************************************************************************/
+void libvlc_video_set_stitching( libvlc_media_player_t *p_mi, int enable)
+{
+    if (enable != 0 && enable != 1) {
+        return;
+    }
+
+    if(enable == 1)
+        var_SetString(p_mi, "video-filter", "stitching");
+    else
+        var_SetString(p_mi, "video-filter", "");
+}
+
 /* ************** */
 /* module helpers */
 /* ************** */
