@@ -216,6 +216,8 @@ libvlc_renderer_discoverer_stop
 libvlc_retain
 libvlc_set_fullscreen
 libvlc_set_user_agent
+libvlc_set_video_filter
+libvlc_set_video_filters_string
 libvlc_set_app_id
 libvlc_title_descriptions_release
 libvlc_toggle_fullscreen
