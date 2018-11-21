@@ -22,9 +22,6 @@
  * Written by Yongjin Kim <aiden@linkflow.co.kr>, September 2018
  */
 
-#include <thread>
-#include <mutex>
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/objdetect.hpp"

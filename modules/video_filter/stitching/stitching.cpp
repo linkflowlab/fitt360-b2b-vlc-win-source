@@ -2,8 +2,6 @@
 # include "config.h"
 #endif
 
-#include <thread>
-#include <mutex>
 #include <assert.h>
 #include <atomic>
 #include <iostream>
