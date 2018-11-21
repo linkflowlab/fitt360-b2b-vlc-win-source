@@ -161,7 +161,7 @@ libstitching_plugin_la_SOURCES = \
     video_filter/stitching/StitchCore.cpp video_filter/stitching/StitchCore.h \
     video_filter/stitching/LFUtil.cpp video_filter/stitching/LFUtil.h \
     video_filter/stitching/FaceDetection.cpp video_filter/stitching/FaceDetection.h
-libstitching_plugin_la_CFLAGS = -std=c++11 -fpermissive $(AM_CFLAGS) -O2
+libstitching_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS) -O2
 libstitching_plugin_la_LIBADD = $(OPENCV_LIBS) -lpthread
 libstitching_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
 video_filter_LTLIBRARIES += libstitching_plugin.la
