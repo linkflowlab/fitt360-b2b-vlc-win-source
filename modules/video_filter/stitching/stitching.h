@@ -1,6 +1,14 @@
 #ifndef _STITCH_H_
 #define _STITCH_H_
 
+#ifdef __MINGW32__
+#include "mingw.thread.h"
+#include "mingw.mutex.h"
+#else
+#include <thread>
+#include <mutex>
+#endif
+
 using namespace std;
 using namespace cv;
 
