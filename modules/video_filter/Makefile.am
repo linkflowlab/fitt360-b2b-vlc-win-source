@@ -166,12 +166,12 @@ libstitching_plugin_la_LIBADD = $(OPENCV_LIBS) -lpthread
 libstitching_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
 video_filter_LTLIBRARIES += libstitching_plugin.la
 
-libopencv_wrapper_plugin_la_SOURCES = video_filter/opencv_wrapper.c
-libopencv_wrapper_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
-libopencv_wrapper_plugin_la_LIBADD = $(OPENCV_LIBS)
-libopencv_wrapper_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
-video_filter_LTLIBRARIES += $(LTLIBopencv_wrapper)
-EXTRA_LTLIBRARIES += libopencv_wrapper_plugin.la
+#libopencv_wrapper_plugin_la_SOURCES = video_filter/opencv_wrapper.c
+#libopencv_wrapper_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
+#libopencv_wrapper_plugin_la_LIBADD = $(OPENCV_LIBS)
+#libopencv_wrapper_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
+#video_filter_LTLIBRARIES += $(LTLIBopencv_wrapper)
+#EXTRA_LTLIBRARIES += libopencv_wrapper_plugin.la
 
 libpostproc_plugin_la_SOURCES = video_filter/postproc.c
 libpostproc_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(POSTPROC_CFLAGS) $(AVUTIL_CFLAGS)
@@ -184,9 +184,9 @@ EXTRA_LTLIBRARIES += libpostproc_plugin.la
 libblend_plugin_la_SOURCES = video_filter/blend.cpp
 video_filter_LTLIBRARIES += libblend_plugin.la
 
-libopencv_example_plugin_la_SOURCES = video_filter/opencv_example.cpp video_filter/filter_event_info.h
-libopencv_example_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
-libopencv_example_plugin_la_LIBADD = $(OPENCV_LIBS)
-libopencv_example_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
-video_filter_LTLIBRARIES += $(LTLIBopencv_example)
-EXTRA_LTLIBRARIES += libopencv_example_plugin.la
+#libopencv_example_plugin_la_SOURCES = video_filter/opencv_example.cpp video_filter/filter_event_info.h
+#libopencv_example_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
+#libopencv_example_plugin_la_LIBADD = $(OPENCV_LIBS)
+#libopencv_example_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
+#video_filter_LTLIBRARIES += $(LTLIBopencv_example)
+#EXTRA_LTLIBRARIES += libopencv_example_plugin.la
