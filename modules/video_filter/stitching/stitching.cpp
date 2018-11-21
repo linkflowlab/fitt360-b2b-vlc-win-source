@@ -69,12 +69,12 @@ void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight
 
     // FITT360 Device adaption
     // If bandwidth is under 0.5Mpx, we don't limit feature detection region
-    if(RTSP_SrcWidth*RTSP_SrcHeight < 5 * 1e5) {
-        if(features_type.compare("orb") == 0) {
+    //if(RTSP_SrcWidth*RTSP_SrcHeight < 5 * 1e5) {
+    //    if(features_type.compare("orb") == 0) {
             applyROItoFeatureDetection = false;
-        }
-        padding = 0;
-    }
+    //    }
+    //    padding = 0;
+    //}
 
     OutWidth = outWidth;
     OutHeight = outHeight;
