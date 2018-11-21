@@ -146,6 +146,8 @@ void libvlc_set_video_filters_string( libvlc_media_player_t *p_mi,
         return;
     }
 
+    var_SetString( p_mi, psz_filter_type, psz_string );
+
     vout_thread_t **pp_vouts = GetVouts( p_mi, &n );
 
     for (size_t i = 0; i < n; i++)
@@ -156,6 +158,8 @@ void libvlc_set_video_filters_string( libvlc_media_player_t *p_mi,
 
         vlc_object_release( p_vout );
     }
+
+    free (pp_vouts);
 }
 
 void libvlc_set_video_filter( libvlc_media_player_t *p_mi, const char *psz_name, bool b_enable )
@@ -286,6 +290,10 @@ void libvlc_set_video_filter( libvlc_media_player_t *p_mi, const char *psz_name,
 
         vlc_object_release( p_vout );
     }
+
+    var_SetString( p_mi, psz_filter_type, psz_string );
+
+    free (pp_vouts);
 }
 
 void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, unsigned on )
