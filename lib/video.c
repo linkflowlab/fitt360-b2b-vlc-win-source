@@ -636,6 +636,7 @@ void libvlc_video_set_deinterlace( libvlc_media_player_t *p_mi, int deinterlace,
 /******************************************************************************
  * libvlc_video_set_stitching : enable/disable stitching and filter
  *****************************************************************************/
+// refer to https://trac.videolan.org/vlc/ticket/5603#no1
 void libvlc_video_set_stitching( libvlc_media_player_t *p_mi, int enable)
 {
     if (enable != 0 && enable != 1) {
@@ -646,6 +647,21 @@ void libvlc_video_set_stitching( libvlc_media_player_t *p_mi, int enable)
         var_SetString(p_mi, "video-filter", "stitching");
     else
         var_SetString(p_mi, "video-filter", "");
+
+    size_t n;
+    vout_thread_t **pp_vouts = GetVouts (p_mi, &n);
+    for (size_t i = 0; i < n; i++)
+    {
+        vout_thread_t *p_vout = pp_vouts[i];
+
+        if(enable == 1)
+            var_SetString(p_vout, "video-filter", "stitching");
+        else
+            var_SetString(p_vout, "video-filter", "");
+
+        vlc_object_release (p_vout);
+    }
+    free (pp_vouts);
 }
 
 /* ************** */
