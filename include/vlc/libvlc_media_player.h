@@ -1398,6 +1398,28 @@ LIBVLC_API void libvlc_set_fullscreen(libvlc_media_player_t *p_mi, bool b_fullsc
  */
 LIBVLC_API bool libvlc_get_fullscreen( libvlc_media_player_t *p_mi );
 
+// AIDEN FIX: https://trac.videolan.org/vlc/ticket/5603#no1
+/**
+ * Set the video filters string
+ *
+ * \param p_mi the media player
+ * \param psz_filter_type the filters type
+ * \param psz_string the filters string
+ */
+LIBVLC_API void libvlc_set_video_filters_string( libvlc_media_player_t *p_mi,
+                                                 const char *psz_filter_type,
+                                                 const char *psz_string );
+
+/**
+ * Set (enable/disable) a video filter
+ *
+ * \param p_mi the media player
+ * \param psz_name the filter name
+ * \param b_add boolean for whether the filter is to enable or disable
+ */
+LIBVLC_API void libvlc_set_video_filter( libvlc_media_player_t *p_mi, const char *psz_name,
+                                         bool b_enable );
+
 /**
  * Enable or disable key press events handling, according to the LibVLC hotkeys
  * configuration. By default and for historical reasons, keyboard events are

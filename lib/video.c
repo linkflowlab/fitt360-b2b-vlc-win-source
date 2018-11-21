@@ -117,6 +117,163 @@ void libvlc_toggle_fullscreen( libvlc_media_player_t *p_mi )
     free (pp_vouts);
 }
 
+void libvlc_set_video_filters_string( libvlc_media_player_t *p_mi,
+        const char *psz_filter_type,
+        const char *psz_string )
+{
+    size_t n;
+
+    if( strcmp( psz_filter_type, "video-splitter" ) != 0 &&
+            strcmp( psz_filter_type, "video-filter" ) != 0 &&
+            strcmp( psz_filter_type, "sub-source" ) != 0 &&
+            strcmp( psz_filter_type, "sub-filter" ) != 0 )
+    {
+        libvlc_printerr( "Unknown or wrong video filter type." );
+        return;
+    }
+
+    vout_thread_t **pp_vouts = GetVouts( p_mi, &n );
+
+    for (size_t i = 0; i < n; i++)
+    {
+        vout_thread_t *p_vout = pp_vouts[i];
+
+        var_SetString( p_vout, psz_filter_type, psz_string );
+
+        vlc_object_release( p_vout );
+    }
+}
+
+void libvlc_set_video_filter( libvlc_media_player_t *p_mi, const char *psz_name, bool b_enable )
+{
+    char *psz_string = NULL;
+    char *psz_string_p = NULL;
+    const char *psz_filter_type;
+
+    static vout_thread_t *p_vout;
+    size_t n;
+    int i;
+
+    module_t *p_obj = module_find( psz_name );
+    if( !p_obj )
+    {
+        libvlc_printerr( "Unable to find filter module \"%s\".", psz_name );
+        return;
+    }
+
+    if( module_provides( p_obj, "video splitter" ) )
+    {
+        psz_filter_type = "video-splitter";
+    }
+    else if( module_provides( p_obj, "video filter2" ) )
+    {
+        psz_filter_type = "video-filter";
+    }
+    else if( module_provides( p_obj, "sub source" ) )
+    {
+        psz_filter_type = "sub-source";
+    }
+    else if( module_provides( p_obj, "sub filter" ) )
+    {
+        psz_filter_type = "sub-filter";
+    }
+    else
+    {
+        libvlc_printerr( "Unknown video filter type." );
+        return;
+    }
+
+    vout_thread_t **pp_vouts = GetVouts( p_mi, &n );
+
+    // Apply the filters to all the vouts
+    for (i = 0; i < n; i++)
+    {
+        vout_thread_t *p_vout = pp_vouts[i];
+
+        psz_string = var_GetString( p_vout, psz_filter_type );
+
+        if( b_enable ) // In this case, add the filter to the already there filters
+        {
+            if( asprintf( &psz_string_p, "%s:%s", psz_string, psz_name ) == -1 )
+            {
+                free( psz_string );
+                return;
+            }
+            else
+            {
+                free( psz_string );
+                psz_string = psz_string_p;
+            }
+        }
+        else // In this case, remove the filter from the vout active filters list
+        {
+            int i_sub = 0; // i offset to extract the sub strings
+            int o_off = 0; // offset on the out string
+
+            int len; // length of the filter name to remove
+            char *psz_string_p; // out string
+            char *psz_sub_string_p; // one filter (sub) string
+
+            len = strlen( psz_string );
+            psz_string_p = calloc( 1, len + 1 );
+
+            if( psz_string_p == NULL )
+                return;
+
+            for( i = 0 ; i <= len ; i++ )
+            {
+                if( psz_string[i] == ':' || psz_string[i] == '\0' ) // the end of a sub string is reached
+                {
+                    // alloc and copy the sub string
+                    psz_sub_string_p = calloc(1,  i - i_sub + 1 );
+                    if( psz_sub_string_p == NULL )
+                        return;
+
+                    memcpy( psz_sub_string_p, (void *) psz_string + i_sub, i - i_sub );
+                    psz_sub_string_p[i - i_sub] = '\0';
+
+                    // the psz_name part of the substring matches!
+                    if( strcmp( psz_sub_string_p, psz_name ) == 0 ) // so we got a match!
+                    {
+                        // we don't copy the substring to the output string
+                        // if the matching psz_name is at the end of psz_string, set the previous ':' to '\0' on the output string
+                        if( psz_string[i] == '\0' )
+                        {
+                            unsigned char *p = (unsigned char *) (psz_string_p + o_off - 1);
+                            *p = '\0';
+                        }
+                    }
+                    else // no match
+                    {
+                        // copy this substring to the output string
+                        memcpy( (void *) (psz_string_p + o_off), psz_sub_string_p, i - i_sub );
+
+                        // set the next byte on the output string to '\0' or ':'
+                        unsigned char *p = psz_string_p + o_off + i - i_sub;
+                        *p = *((unsigned char *) psz_string + i);
+
+                        // increase the output string offset
+                        o_off += i - i_sub + 1;
+                    }
+
+                    // free the sub string
+                    free( psz_sub_string_p );
+
+                    // increase the i sub string offset
+                    i_sub = i + 1;
+                }
+            }
+
+            free( psz_string );
+            psz_string = psz_string_p;
+        }
+
+        var_SetString( p_vout, psz_filter_type, psz_string);
+
+        vlc_object_release( p_vout );
+    }
+}
+
 void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, unsigned on )
 {
     var_SetBool (p_mi, "keyboard-events", !!on);
