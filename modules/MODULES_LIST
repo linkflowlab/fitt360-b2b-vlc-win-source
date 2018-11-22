@@ -409,6 +409,7 @@ $Id$
  * tcp: TCP Network access module
  * tdummy: dummy text renderer
  * telx: teletext subtitles decoder
+ * test: test video filter
  * textst: HDMV text subtitles decoder
  * theora: a theora video decoder/packetizer/encoder using the libtheora
  * timecode: clock/timecode as a subtitle input
