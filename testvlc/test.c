@@ -17,7 +17,8 @@ int main(int argc, char **argv)
     inst = libvlc_new(sizeof args/ sizeof *args, args);
 
     // create a new item
-    m = libvlc_media_new_path(inst, "/home/dragon/project/fitt360-app-security/input/tc1/leftfront.avi");
+//   m = libvlc_media_new_path(inst, "/home/dragon/project/fitt360-app-security/input/tc1/leftfront.avi");
+    m = libvlc_media_new_location(inst, "rtsp://192.168.0.99:8551/all");
 	//m = libvlc_media_new_path(inst, "/home/dragon/VID_20180112_172426.mp4");
 
     // create a media play playing environment
@@ -32,7 +33,7 @@ int main(int argc, char **argv)
 	// test hand-made APIs
 	// 1. stitching API
 	libvlc_video_set_stitching(mp, 1);
-	sleep(2);
+	sleep(10);
 	libvlc_video_set_stitching(mp, 0);
 	sleep(2);
 
