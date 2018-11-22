@@ -146,6 +146,7 @@ $Id$
  * flac: Flac decoder using libflac
  * flacsys: FLAC demuxer
  * flaschen: Flaschen-Taschen screen protocol video output
+ * flipswap: Horizontal flip and swap lower left and lower right of 4 channel integrated image
  * float_mixer: Precise float audio mixer
  * fluidsynth: Software MIDI synthetizer using libfluidsynth
  * folder: folder meta data and art finder

@@ -236,6 +236,8 @@ ExtVideo::ExtVideo( intf_thread_t *_p_intf, QTabWidget *_parent ) :
 
     SETUP_VFILTER( stitching )
 
+    SETUP_VFILTER( flipswap )
+
     SETUP_VFILTER( gaussianblur )
     SETUP_VFILTER_OPTION( gaussianblurSigmaSlider, valueChanged( int ) )
 
