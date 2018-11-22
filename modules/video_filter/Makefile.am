@@ -170,6 +170,13 @@ libflipswap_plugin_la_LIBADD = $(OPENCV_LIBS)
 libflipswap_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
 video_filter_LTLIBRARIES += libflipswap_plugin.la
 
+libtest_plugin_la_SOURCES = \
+    video_filter/test.cpp
+libtest_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS) -O2
+libtest_plugin_la_LIBADD = $(OPENCV_LIBS)
+libtest_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
+video_filter_LTLIBRARIES += libtest_plugin.la
+
 #libopencv_wrapper_plugin_la_SOURCES = video_filter/opencv_wrapper.c
 #libopencv_wrapper_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
 #libopencv_wrapper_plugin_la_LIBADD = $(OPENCV_LIBS)
