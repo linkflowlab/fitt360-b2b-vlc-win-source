@@ -1,3 +1,25 @@
+/*****************************************************************************
+ * flipswap.c : Flipswap video plugin for vlc
+ *****************************************************************************
+ * Copyright (C) 2018 LINKFLOW Co., Ltd.
+ *
+ * Authors: Yongjin Kim <aiden@linkflow.co.kr>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -55,7 +77,6 @@ void FrameRender(filter_t* ptrFilter, Mat& frame)
     Mat lowerright = frame(Rect(frame.cols/2, frame.rows/2, frame.cols/2, frame.rows/2));
     flip(lowerleft, lowerleft, 1);
     flip(lowerright, lowerright, 1);
-    //swap(lowerleft, lowerright);
 
     Mat tmp = lowerright.clone();
     lowerleft.copyTo(frame(Rect(frame.cols/2, frame.rows/2, frame.cols/2, frame.rows/2)));
@@ -127,8 +148,6 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         return;
     }
 
-    //Size sz = Size(p_in->format.i_width, p_in->format.i_height);
-
     video_format_t fmt_out;
     memset( &fmt_out, 0, sizeof(video_format_t) );
     fmt_out = p_in->format;
@@ -142,9 +161,7 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         return;
     }
 
-    Size sz = cvSize(abs(p_in->p[0].i_visible_pitch /
-                p_in->p[0].i_pixel_pitch),
-            abs(p_in->p[0].i_visible_lines));
+    Size sz = cvSize(abs(p_in->p[0].i_visible_pitch / p_in->p[0].i_pixel_pitch), abs(p_in->p[0].i_visible_lines));
 
     m = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
 }
