@@ -313,11 +313,8 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         return;
     }
 
-    Size sz = Size(p_in->format.i_width, p_in->format.i_height);
     video_format_t fmt_out;
-
     memset( &fmt_out, 0, sizeof(video_format_t) );
-
     fmt_out = p_in->format;
     fmt_out.i_chroma = VLC_CODEC_RGB24;
 
@@ -335,6 +332,10 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         msg_Err(p_filter, "can't convert (unsupported formats?), aborting...");
         return;
     }
+
+    Size sz = cvSize(abs(p_in->p[0].i_visible_pitch /
+                p_in->p[0].i_pixel_pitch),
+            abs(p_in->p[0].i_visible_lines));
 
     m = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
 }
@@ -377,7 +378,9 @@ static void PrepareDestPicture(filter_t* p_filter, picture_t* ref_pic, Mat& m)
     fmt_out.i_chroma = VLC_CODEC_RGB24;
 
     p_sys->p_dest_image = picture_NewFromFormat(&fmt_out);
-    Size sz = Size(fmt_out.i_width, fmt_out.i_height);
+    Size sz = cvSize(abs(ref_pic->p[0].i_visible_pitch /
+                ref_pic->p[0].i_pixel_pitch),
+            abs(ref_pic->p[0].i_visible_lines));
     m = Mat(sz, CV_8UC3, p_sys->p_dest_image->p[0].p_pixels);
 }
 
@@ -395,8 +398,9 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
     // Prevent repeat create
     if(!stitcherInitDone) {
         stitcherInitDone = true;
-        InitStreamStitcher(p_pic->format.i_width, p_pic->format.i_height,
-                p_pic->format.i_width, p_pic->format.i_height, "orb");
+        int width = abs(p_pic->p[0].i_visible_pitch / p_pic->p[0].i_pixel_pitch);
+        int height = abs(p_pic->p[0].i_visible_lines);
+        InitStreamStitcher(width, height, width, height, "orb");
         printf("Stitching thread initialized\n");
         RunStreamStitcher();
     }
