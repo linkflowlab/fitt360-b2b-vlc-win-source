@@ -1311,6 +1311,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="flipswapEnable">
+        <property name="text">
+         <string>Flipswap</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="psychedelicEnable">
         <property name="text">
          <string>Psychedelic</string>
