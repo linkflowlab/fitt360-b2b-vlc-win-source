@@ -127,11 +127,10 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         return;
     }
 
-    Size sz = Size(p_in->format.i_width, p_in->format.i_height);
+    //Size sz = Size(p_in->format.i_width, p_in->format.i_height);
+
     video_format_t fmt_out;
-
     memset( &fmt_out, 0, sizeof(video_format_t) );
-
     fmt_out = p_in->format;
     fmt_out.i_chroma = VLC_CODEC_RGB24;
 
@@ -142,6 +141,10 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         msg_Err(p_filter, "can't convert (unsupported formats?), aborting...");
         return;
     }
+
+    Size sz = cvSize(abs(p_in->p[0].i_visible_pitch /
+                p_in->p[0].i_pixel_pitch),
+            abs(p_in->p[0].i_visible_lines));
 
     m = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
 }
