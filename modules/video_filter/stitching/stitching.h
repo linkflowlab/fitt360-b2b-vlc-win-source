@@ -21,10 +21,6 @@ static std::mutex mtxResultBuf;
 static std::mutex mtxFrontDraw;
 static std::mutex mtxRearDraw;
 
-// Input Image Buffer
-static unsigned char* srcBuf = NULL;
-static unsigned char* dstBuf = NULL;
-
 static Mat RTSPframe;
 static Mat RTSPframe_result;
 
@@ -37,8 +33,6 @@ static Mat RTSPframe_result;
 static Mat partFrames[4];
 static bool isFrameAvailable = false;
 static bool isParamAvailable[CAMDIR_END] = {false, false};
-static bool isFrontParamAvailable = false;
-static bool isRearParamAvailable = false;
 
 static short padding = 0;
 static int recalc_interval = 2000; /*ms*/
@@ -53,20 +47,9 @@ void BindStreamStitcherInputBuf();
 // Internal Rendering routine for stitching front & rear and merge it to one
 void FrameRender();
 
-// Test execution code
-void TestRun(const char* addr = NULL);
-void RawTestRun(const char* addr = NULL);
-
-// Functions internally used
-bool processvideo(const char* filename = NULL);
-bool processimage(const char* filename = NULL);
-bool processRTSP(const char* address = NULL);
-
 // Threading for parameter calcuation
 static void _CalcFrontThread();
 static void _CalcRearThread();
-// Threading for getting latest frame from opencv videoIO
-static void _GetRecentFrame(VideoCapture &cap, Mat &target);
 
 std::thread stitchFrontThread;
 std::thread stitchRearThread;
