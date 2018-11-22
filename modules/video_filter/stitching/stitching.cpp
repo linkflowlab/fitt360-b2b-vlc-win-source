@@ -1,3 +1,25 @@
+/*****************************************************************************
+ * stitching.c : Stitching video plugin for vlc
+ *****************************************************************************
+ * Copyright (C) 2018 LINKFLOW Co., Ltd.
+ *
+ * Authors: Yongjin Kim <aiden@linkflow.co.kr>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -16,12 +38,8 @@
 
 #include "filter_picture.h"
 
-#include "opencv2/core/optim.hpp"
-#include "opencv2/core/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/objdetect.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/core/core_c.h"
 
 #include "LFSecurity.h"
 #include "stitching.h"
@@ -37,8 +55,6 @@ static void Destroy     ( vlc_object_t * );
 
 static picture_t *Filter( filter_t *, picture_t * );
 static int FilterCallback( vlc_object_t *, char const *, vlc_value_t, vlc_value_t, void * );
-
-static void PictureToMat( filter_t* p_filter, picture_t* p_in );
 
 vlc_module_begin ()
     set_description( N_("Stitching") )
@@ -65,7 +81,6 @@ void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight
     RTSP_SrcWidth = srcWidth;
     RTSP_SrcHeight = srcHeight;
 
-    // FITT360 Device adaption
     // If bandwidth is under 0.5Mpx, we don't limit feature detection region
     //if(RTSP_SrcWidth*RTSP_SrcHeight < 5 * 1e5) {
     //    if(features_type.compare("orb") == 0) {
@@ -79,18 +94,12 @@ void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight
 
     recalc_interval = interval;
     bFaceDetect = bFaceDetectON;
-
-    //Buffer allocation
-    RTSPframe = Mat::zeros (RTSP_SrcHeight, RTSP_SrcWidth, CV_8UC3);
-    RTSPframe_result = Mat::zeros (OutHeight, OutWidth, CV_8UC3);
 }
 
 void RunStreamStitcher()
 {
     stitchFrontThread = std::thread(_CalcFrontThread);
     stitchRearThread = std::thread(_CalcRearThread);
-    //stitchFrontThread.detach();
-    //stitchRearThread.detach();
 
     if(bFaceDetect)
         InitFaceDetectionAndGetRef(faceDetectThread);
@@ -246,7 +255,7 @@ static int Create( vlc_object_t *p_this )
     p_sys->p_proc_image = NULL;
     p_sys->p_dest_image = NULL;
 
-    printf("Stitching plugin created\n");
+    printf("Open stitching plugin\n");
 
     return VLC_SUCCESS;
 }
@@ -290,7 +299,7 @@ static void Destroy( vlc_object_t *p_this )
 
     bSigStop = false;
 
-    printf("Stitching Plugin destroyed\n");
+    printf("Close stitching plugin\n");
     free( p_sys );
 }
 
@@ -333,10 +342,7 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         return;
     }
 
-    Size sz = cvSize(abs(p_in->p[0].i_visible_pitch /
-                p_in->p[0].i_pixel_pitch),
-            abs(p_in->p[0].i_visible_lines));
-
+    Size sz = cvSize(abs(p_in->p[0].i_visible_pitch / p_in->p[0].i_pixel_pitch), abs(p_in->p[0].i_visible_lines));
     m = Mat(sz, CV_8UC3, p_sys->p_proc_image->p[0].p_pixels);
 }
 
@@ -378,9 +384,7 @@ static void PrepareDestPicture(filter_t* p_filter, picture_t* ref_pic, Mat& m)
     fmt_out.i_chroma = VLC_CODEC_RGB24;
 
     p_sys->p_dest_image = picture_NewFromFormat(&fmt_out);
-    Size sz = cvSize(abs(ref_pic->p[0].i_visible_pitch /
-                ref_pic->p[0].i_pixel_pitch),
-            abs(ref_pic->p[0].i_visible_lines));
+    Size sz = cvSize(abs(ref_pic->p[0].i_visible_pitch / ref_pic->p[0].i_pixel_pitch), abs(ref_pic->p[0].i_visible_lines));
     m = Mat(sz, CV_8UC3, p_sys->p_dest_image->p[0].p_pixels);
 }
 
@@ -401,7 +405,6 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
         int width = abs(p_pic->p[0].i_visible_pitch / p_pic->p[0].i_pixel_pitch);
         int height = abs(p_pic->p[0].i_visible_lines);
         InitStreamStitcher(width, height, width, height, "orb");
-        printf("Stitching thread initialized\n");
         RunStreamStitcher();
     }
 
