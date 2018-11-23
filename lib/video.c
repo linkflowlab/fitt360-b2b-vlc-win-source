@@ -169,7 +169,7 @@ void libvlc_set_video_filter( libvlc_media_player_t *p_mi, const char *psz_name,
     {
         psz_filter_type = "video-splitter";
     }
-    else if( module_provides( p_obj, "video filter2" ) )
+    else if( module_provides( p_obj, "video filter" ) )
     {
         psz_filter_type = "video-filter";
     }
