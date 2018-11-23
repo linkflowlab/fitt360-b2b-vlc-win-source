@@ -31,13 +31,31 @@ int main(int argc, char **argv)
     libvlc_media_player_play(mp);
 
 	// test hand-made APIs
-	// 1. stitching API
+
+    // 0. API 1
+    libvlc_set_video_filter(mp, "stitching", true);
+    sleep(5);
+    libvlc_set_video_filter(mp, "stitching", false);
+    sleep(3);
+    libvlc_set_video_filter(mp, "stitching", true);
+    sleep(5);
+    libvlc_set_video_filter(mp, "flipswap", true);
+    sleep(10);
+    libvlc_set_video_filter(mp, "invert", true);
+    sleep(3);
+    libvlc_set_video_filter(mp, "stitching", false);
+    sleep(3);
+    libvlc_set_video_filter(mp, "invert", false);
+    sleep(3);
+    libvlc_set_video_filter(mp, "flipswap", false);
+
+	// 1. API2
 	libvlc_video_set_stitching(mp, 1);
 	sleep(10);
 	libvlc_video_set_stitching(mp, 0);
 	sleep(2);
 
-	// 2. filter API
+	// 2. API3
 	libvlc_set_video_filters_string(mp, "video-filter", "mirror:invert");
 	sleep(2);
 	libvlc_set_video_filters_string(mp, "video-filter", "mirror");
