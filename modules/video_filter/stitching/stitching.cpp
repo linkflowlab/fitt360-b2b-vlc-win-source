@@ -55,6 +55,13 @@ static void Destroy     ( vlc_object_t * );
 
 static picture_t *Filter( filter_t *, picture_t * );
 static int FilterCallback( vlc_object_t *, char const *, vlc_value_t, vlc_value_t, void * );
+static int IntervalCallback(vlc_object_t *object, char const *cmd, vlc_value_t oldval, vlc_value_t newval, void *data);
+
+#define CFG_PREFIX "stitching-"
+#define INTERVAL_MIN          1
+#define INTERVAL_MAX     100000
+#define INTERVAL_TEXT     N_("Stitching interval(ms)")
+#define INTERVAL_LONGTEXT N_("Stitching algorithm's recalculation interval(ms)")
 
 vlc_module_begin ()
     set_description( N_("Stitching") )
@@ -63,6 +70,7 @@ vlc_module_begin ()
     set_category( CAT_VIDEO )
     set_subcategory( SUBCAT_VIDEO_VFILTER )
     set_capability( "video filter", 0 )
+    add_integer_with_range(CFG_PREFIX "interval", 2000, INTERVAL_MIN, INTERVAL_MAX, INTERVAL_TEXT, INTERVAL_LONGTEXT, false)
     set_callbacks( Create, Destroy )
 vlc_module_end ()
 
@@ -70,6 +78,11 @@ typedef struct {
     image_handler_t* p_image_handle;
     picture_t* p_proc_image;
     picture_t* p_dest_image;
+
+    struct {
+        vlc_mutex_t lock;
+        int interval;
+    } cfg;
 } filter_sys_t;
 
 void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight, string fType, int interval, bool bFaceDetectON)
@@ -144,7 +157,9 @@ static void _CalcFrontThread()
             isParamAvailable[FRONT] = true;
 
             // If succeded, rest for a while in order to stabilize screen
+            mtxInterval.lock();
             std::this_thread::sleep_for(std::chrono::milliseconds(recalc_interval));
+            mtxInterval.unlock();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -181,7 +196,9 @@ static void _CalcRearThread()
             isParamAvailable[REAR] = true;
 
             // If succeded, rest for a while in order to stabilize screen
+            mtxInterval.lock();
             std::this_thread::sleep_for(std::chrono::milliseconds(recalc_interval));
+            mtxInterval.unlock();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -255,6 +272,10 @@ static int Create( vlc_object_t *p_this )
     p_sys->p_proc_image = NULL;
     p_sys->p_dest_image = NULL;
 
+    vlc_mutex_init(&p_sys->cfg.lock);
+    p_sys->cfg.interval = var_CreateGetIntegerCommand(p_filter, CFG_PREFIX "interval");
+    var_AddCallback(p_filter, CFG_PREFIX "interval", IntervalCallback, NULL);
+
     printf("Open stitching plugin\n");
 
     return VLC_SUCCESS;
@@ -298,6 +319,9 @@ static void Destroy( vlc_object_t *p_this )
     RTSPframe_result.release();
 
     bSigStop = false;
+
+    var_DelCallback(p_filter, CFG_PREFIX "interval", IntervalCallback, NULL);
+    vlc_mutex_destroy(&p_sys->cfg.lock);
 
     printf("Close stitching plugin\n");
     free( p_sys );
@@ -404,11 +428,15 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
         stitcherInitDone = true;
         int width = abs(p_pic->p[0].i_visible_pitch / p_pic->p[0].i_pixel_pitch);
         int height = abs(p_pic->p[0].i_visible_lines);
-        InitStreamStitcher(width, height, width, height, "orb");
+        int interval = var_InheritInteger(p_filter, CFG_PREFIX "interval");
+        printf("Init interval: %d\n", interval);
+        InitStreamStitcher(width, height, width, height, "orb", interval);
         RunStreamStitcher();
     }
 
     filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
+
+    printf("interval: %d\n", p_sys->cfg.interval);
 
     isFrameAvailable = false;
     mtxBuf.lock();
@@ -444,6 +472,27 @@ static int FilterCallback ( vlc_object_t *p_this, char const *psz_var,
 {
     (void) p_this; (void)oldval;
     filter_sys_t *p_sys = (filter_sys_t *)p_data;
+
+    return VLC_SUCCESS;
+}
+
+static int IntervalCallback(vlc_object_t *object, char const *cmd, vlc_value_t oldval, vlc_value_t newval, void *data)
+{
+    printf("Called callback of interval\n");
+    filter_t     *filter = (filter_t *)object;
+    filter_sys_t *p_sys = filter->p_sys;
+    //VLC_UNUSED(cmd); VLC_UNUSED(oldval); VLC_UNUSED(data);
+
+    vlc_mutex_lock(&p_sys->cfg.lock);
+    p_sys->cfg.interval = newval.i_int;
+    vlc_mutex_unlock(&p_sys->cfg.lock);
+
+    mtxInterval.lock();
+    recalc_interval = VLC_CLIP(p_sys->cfg.interval, INTERVAL_MIN, INTERVAL_MAX);
+    mtxInterval.unlock();
+
+    printf("Changed param recalculation interval to %d ms\n", recalc_interval);
+
 
     return VLC_SUCCESS;
 }

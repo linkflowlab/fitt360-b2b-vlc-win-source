@@ -104,6 +104,14 @@ typedef struct libvlc_audio_output_device_t
 } libvlc_audio_output_device_t;
 
 /**
+  * Stitching options definition
+  */
+typedef enum libvlc_video_stitching_option_t {
+    libvlc_stitching_Enable = 0,
+    libvlc_stitching_Interval
+} libvlc_video_stitching_option_t;
+
+/**
  * Marq options definition
  */
 typedef enum libvlc_video_marquee_option_t {
@@ -1547,6 +1555,23 @@ LIBVLC_API void libvlc_video_set_deinterlace( libvlc_media_player_t *p_mi,
  * \version LibVLC 4.0.0 and later
  */
 LIBVLC_API void libvlc_video_set_stitching( libvlc_media_player_t *p_mi, int enable );
+
+/**
+ * Get an integer stitching option value
+ *
+ * \param p_mi libvlc media player
+ * \param option stitching option to get \see libvlc_video_stitching_int_option_t
+ */
+LIBVLC_API int libvlc_video_get_stitching_int( libvlc_media_player_t *p_mi, unsigned option );
+
+/**
+ * Enable, disable or set an integer marquee option
+ *
+ * \param p_mi libvlc media player
+ * \param option stitching option to set \see libvlc_video_stitching_int_option_t
+ * \param i_val stitching option value
+ */
+LIBVLC_API void libvlc_video_set_stitching_int( libvlc_media_player_t *p_mi, unsigned option, int i_val );
 
 /**
  * Get an integer marquee option value

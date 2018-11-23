@@ -1049,6 +1049,39 @@ get_string( libvlc_media_player_t *p_mi, const char *restrict name,
 }
 
 static const opt_t *
+stitching_option_bynumber(unsigned option)
+{
+    static const opt_t optlist[] =
+    {
+        { "stitching",          0 },
+        { "stitching-interval",  VLC_VAR_INTEGER },
+    };
+    enum { num_opts = sizeof(optlist) / sizeof(*optlist) };
+
+    const opt_t *r = option < num_opts ? optlist+option : NULL;
+    if( !r )
+        libvlc_printerr( "Unknown stitching option" );
+    return r;
+}
+
+/*****************************************************************************
+   * libvlc_video_get_stitching_int : get a stitching option value
+ *****************************************************************************/
+int libvlc_video_get_stitching_int( libvlc_media_player_t *p_mi, unsigned option )
+{
+    return get_int( p_mi, "stitching", stitching_option_bynumber(option) );
+}
+
+/*****************************************************************************
+ * libvlc_video_set_stitching_int: enable, disable or set an int option
+ *****************************************************************************/
+void libvlc_video_set_stitching_int( libvlc_media_player_t *p_mi, unsigned option, int value )
+{
+    set_value( p_mi, "stitching", stitching_option_bynumber(option), VLC_VAR_INTEGER,
+            &(vlc_value_t) { .i_int = value }, true );
+}
+
+static const opt_t *
 marq_option_bynumber(unsigned option)
 {
     static const opt_t optlist[] =

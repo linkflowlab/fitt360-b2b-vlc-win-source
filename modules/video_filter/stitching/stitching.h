@@ -20,6 +20,7 @@ static std::mutex mtxBuf;
 static std::mutex mtxResultBuf;
 static std::mutex mtxFrontDraw;
 static std::mutex mtxRearDraw;
+static std::mutex mtxInterval;
 
 static Mat RTSPframe;
 static Mat RTSPframe_result;

@@ -226,6 +226,8 @@ libvlc_video_get_crop_geometry
 libvlc_video_get_size
 libvlc_video_get_cursor
 libvlc_video_get_logo_int
+libvlc_video_get_stitching_int
+libvlc_video_set_stitching_int
 libvlc_video_get_marquee_int
 libvlc_video_get_marquee_string
 libvlc_video_get_scale
