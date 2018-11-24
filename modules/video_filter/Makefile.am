@@ -158,21 +158,21 @@ libstitching_plugin_la_SOURCES = \
     video_filter/stitching/StitchCore.cpp video_filter/stitching/StitchCore.h \
     video_filter/stitching/LFUtil.cpp video_filter/stitching/LFUtil.h \
     video_filter/stitching/FaceDetection.cpp video_filter/stitching/FaceDetection.h
-libstitching_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS) -O3
+libstitching_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
 libstitching_plugin_la_LIBADD = $(OPENCV_LIBS) -lpthread
 libstitching_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
 video_filter_LTLIBRARIES += libstitching_plugin.la
 
 libflipswap_plugin_la_SOURCES = \
      video_filter/flipswap.cpp
-libflipswap_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS) -O3
+libflipswap_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
 libflipswap_plugin_la_LIBADD = $(OPENCV_LIBS)
 libflipswap_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
 video_filter_LTLIBRARIES += libflipswap_plugin.la
 
 libtest_plugin_la_SOURCES = \
     video_filter/test.cpp
-libtest_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS) -O2
+libtest_plugin_la_CPPFLAGS = -std=c++1y -fpermissive $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
 libtest_plugin_la_LIBADD = $(OPENCV_LIBS)
 libtest_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
 video_filter_LTLIBRARIES += libtest_plugin.la
