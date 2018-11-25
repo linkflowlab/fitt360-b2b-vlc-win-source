@@ -299,6 +299,9 @@ void vout_IntfInit( vout_thread_t *p_vout )
     var_AddCallback( p_vout, "viewpoint", ViewpointCallback, NULL );
     var_Create( p_vout, "viewpoint-changeable", VLC_VAR_BOOL );
 
+	/* Transform (for controlling LF video layout independently)*/
+	var_Create( p_vout, "transform-type", VLC_VAR_STRING | VLC_VAR_DOINHERIT );
+
     vout_IntfReinit( p_vout );
 }
 
