@@ -1589,6 +1589,48 @@ LIBVLC_API void libvlc_video_set_marquee_int( libvlc_media_player_t *p_mi,
 LIBVLC_API void libvlc_video_set_marquee_string( libvlc_media_player_t *p_mi,
                                                      unsigned option, const char *psz_text );
 
+/** option values for libvlc_video_{get,set}_adjust_{int,float,bool} */
+enum libvlc_video_transform_option_t {
+    libvlc_transform_Enable = 0,
+    libvlc_transform_type
+};
+
+/**
+ * Enable, disable or set an integer transform option
+ *
+ * Setting libvlc_transform_Enable has the side effect of enabling (arg !0)
+ * or disabling (arg 0) the transform filter.
+ *
+ * \param p_mi libvlc media player
+ * \param channel[4] transform option to video channel we apply new parameter
+ * \param option transform option to set \see libvlc_video_transform_int_option_t
+ * \param i_val transform option value
+ */
+LIBVLC_API void libvlc_video_set_transform_int( libvlc_media_player_t *p_mi,
+                                                  unsigned option, int i_val );
+
+/**
+ * Set a transform string option
+ *
+ * \param p_mi libvlc media player
+ * \param channel[4] transform option to video channel we apply new parameter
+ * \param option transform option to set \see libvlc_video_transform_string_option_t
+ * \param psz_text transform option value
+ */
+LIBVLC_API void libvlc_video_set_transform_string( libvlc_media_player_t *p_mi, bool channel[4],
+                                                     unsigned option, const char *psz_text );
+
+/**
+ * Set a transform string option to each views separately
+ *
+ * \param p_mi libvlc media player
+ * \param option transform option to set \see libvlc_video_transform_string_option_t
+ * \param num view count
+ * \param value[] option list
+ */
+
+LIBVLC_API void libvlc_video_set_transform_views( libvlc_media_player_t *p_mi, unsigned option, int num, const char* value[]);
+
 /** option values for libvlc_video_{get,set}_logo_{int,string} */
 enum libvlc_video_logo_option_t {
     libvlc_logo_enable,
