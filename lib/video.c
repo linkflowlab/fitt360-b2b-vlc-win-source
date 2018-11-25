@@ -1101,3 +1101,117 @@ float libvlc_video_get_adjust_float( libvlc_media_player_t *p_mi,
 {
     return get_float( p_mi, "adjust", adjust_option_bynumber(option) );
 }
+
+/*
+   Transform API
+   --transform-type={90,180,270,hflip,vflip,transpose,antitranspose}
+*/
+
+static const opt_t *
+transform_option_bynumber( unsigned option )
+{
+    static const opt_t optlist[] =
+    {
+        { "transform",     0 },
+        { "transform-type",   VLC_VAR_STRING },
+    };
+    enum { num_opts = sizeof(optlist) / sizeof(*optlist) };
+
+    const opt_t *r = option < num_opts ? optlist+option : NULL;
+    if( !r )
+        libvlc_printerr( "Unknown transform option" );
+    return r;
+}
+
+static void
+set_transform_value( libvlc_media_player_t *p_mi, const char *restrict name,
+           const opt_t *restrict opt, unsigned i_expected_type,
+           const vlc_value_t *val, bool b_sub_source , bool channel[4])
+{
+    if( !opt ) return;
+
+    int i_type = opt->type;
+    vlc_value_t new_val = *val;
+    vlc_value_t std_val;
+    std_val.psz_string = "0";
+    const char *psz_opt_name = opt->name;
+    switch( i_type )
+    {
+        case 0: /* the enabler */
+        {
+            int i_ret = get_filter_str( VLC_OBJECT( p_mi ), opt->name, val->i_int,
+                                        &psz_opt_name, &new_val.psz_string );
+            if( i_ret != VLC_SUCCESS )
+                return;
+            i_type = VLC_VAR_STRING;
+            break;
+        }
+        case VLC_VAR_INTEGER:
+        case VLC_VAR_FLOAT:
+        case VLC_VAR_STRING:
+            if( i_expected_type != opt->type )
+            {
+                libvlc_printerr( "Invalid argument to %s", name );
+                return;
+            }
+            break;
+        default:
+            libvlc_printerr( "Invalid argument to %s", name );
+            return;
+    }
+
+	/* Set the new value to the media player. Next vouts created from this
+     * media player will inherit this new value */
+    var_SetChecked( p_mi, psz_opt_name, i_type, new_val );
+
+    /* Set the new value to specified vouts */
+    size_t i_vout_count;
+    vout_thread_t **pp_vouts = GetVouts( p_mi, &i_vout_count );
+    for( size_t i = 0; i < i_vout_count; ++i )
+    {
+        if(channel[i] == true) {
+            var_SetChecked( pp_vouts[i], psz_opt_name, i_type, new_val );
+        } else
+            var_SetChecked( pp_vouts[i], psz_opt_name, i_type, std_val );
+        if( b_sub_source )
+            var_TriggerCallback( pp_vouts[i], "sub-source" );
+        vlc_object_release( pp_vouts[i] );
+    }
+
+    if( opt->type == 0 )
+        free( new_val.psz_string );
+}
+
+void libvlc_video_set_transform_int( libvlc_media_player_t *p_mi, unsigned option, int value )
+{
+    set_value( p_mi, "transform", transform_option_bynumber(option), VLC_VAR_INTEGER, &(vlc_value_t) { .i_int = value }, false);
+}
+
+void libvlc_video_set_transform_string( libvlc_media_player_t *p_mi, bool channel[4], unsigned option, const char * value )
+{
+    set_transform_value( p_mi, "transform", transform_option_bynumber(option), VLC_VAR_STRING, &(vlc_value_t){ .psz_string = (char *)value }, true , channel);
+}
+
+void libvlc_video_set_transform_views( libvlc_media_player_t *p_mi, unsigned option, int num, const char* value[])
+{
+    opt_t* opt = transform_option_bynumber(option);
+    if( !opt ) return;
+
+    int i_type = opt->type;
+    vlc_value_t new_val[num];
+    const char *psz_opt_name = opt->name;
+
+    //var_SetChecked( p_mi, psz_opt_name, i_type, new_val );
+
+    size_t i_vout_count;
+    vout_thread_t **pp_vouts = GetVouts( p_mi, &i_vout_count );
+    for( size_t i = 0; i < i_vout_count; ++i )
+    {
+        if(i >= num)
+            break;
+        new_val[i].psz_string = value[i];
+        var_SetChecked( pp_vouts[i], psz_opt_name, i_type, new_val[i] );
+        var_TriggerCallback( pp_vouts[i], "sub-source" );
+        vlc_object_release( pp_vouts[i] );
+    }
+}
