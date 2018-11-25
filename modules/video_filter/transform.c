@@ -47,9 +47,9 @@ static void Close(vlc_object_t *);
 #define CFG_PREFIX "transform-"
 
 #define TYPE_TEXT N_("Transform type")
-static const char * const type_list[] = { "90", "180", "270",
+static const char * const type_list[] = { "0", "90", "180", "270",
     "hflip", "vflip", "transpose", "antitranspose" };
-static const char * const type_list_text[] = { N_("Rotate by 90 degrees"),
+static const char * const type_list_text[] = { N_("Identity"), N_("Rotate by 90 degrees"),
     N_("Rotate by 180 degrees"), N_("Rotate by 270 degrees"),
     N_("Flip horizontally"), N_("Flip vertically"),
     N_("Transpose"), N_("Anti-transpose") };
@@ -62,7 +62,7 @@ vlc_module_begin()
     set_category(CAT_VIDEO)
     set_subcategory(SUBCAT_VIDEO_VFILTER)
 
-    add_string(CFG_PREFIX "type", "90", TYPE_TEXT, TYPE_TEXT, false)
+    add_string(CFG_PREFIX "type", "0", TYPE_TEXT, TYPE_TEXT, false)
         change_string_list(type_list, type_list_text)
         change_safe()
 
@@ -73,6 +73,13 @@ vlc_module_end()
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
+static void Nothing(int *sx, int *sy, int w, int h, int dx, int dy)
+{
+	VLC_UNUSED(h); VLC_UNUSED(w);
+	*sx = dx;
+	*sy = dy;
+}
+
 static void HFlip(int *sx, int *sy, int w, int h, int dx, int dy)
 {
     VLC_UNUSED( h );
@@ -202,6 +209,7 @@ static void PlaneYUY2_##f(plane_t *restrict dst, const plane_t *restrict src) \
 #define PLANES(f) \
 PLANE(f,8) PLANE(f,16) PLANE(f,32)
 
+PLANES(Nothing)
 PLANES(HFlip)
 #define Plane8_VFlip Plane_VFlip
 #define Plane16_VFlip Plane_VFlip
@@ -212,6 +220,7 @@ PLANES(R90)
 PLANES(R180)
 PLANES(R270)
 
+#define Plane422_Nothing Plane32_Nothing
 #define Plane422_HFlip Plane16_HFlip
 #define Plane422_VFlip Plane_VFlip
 #define Plane422_R180  Plane16_R180
@@ -220,6 +229,7 @@ I422(AntiTranspose)
 I422(R90)
 I422(R270)
 
+#define PlaneYUY2_Nothing Plane32_Nothing
 #define PlaneYUY2_HFlip Plane32_HFlip
 #define PlaneYUY2_VFlip Plane_VFlip
 #define PlaneYUY2_R180  Plane32_R180
@@ -245,6 +255,7 @@ typedef struct {
       Plane422_##f, PlaneYUY2_##f }
 
 static const transform_description_t descriptions[] = {
+    DESC("0",             Nothing,       Nothing,       TRANSFORM_IDENTITY),
     DESC("90",            R90,           R270,          TRANSFORM_R90),
     DESC("180",           R180,          R180,          TRANSFORM_R180),
     DESC("270",           R270,          R90,           TRANSFORM_R270),
