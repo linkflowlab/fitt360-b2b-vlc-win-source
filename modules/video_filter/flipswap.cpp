@@ -121,6 +121,10 @@ static void Destroy( vlc_object_t *p_this )
     filter_t *p_filter = (filter_t *)p_this;
     filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
 
+    if (p_sys->p_image_handle) {
+        image_HandlerDelete( p_sys->p_image_handle );
+    }
+
     if(p_sys->p_proc_image) {
         picture_Release(p_sys->p_proc_image);
         p_sys->p_proc_image = NULL;
