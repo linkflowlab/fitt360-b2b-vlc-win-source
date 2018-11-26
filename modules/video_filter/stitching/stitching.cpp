@@ -285,6 +285,10 @@ static void Destroy( vlc_object_t *p_this )
     DeallocAllParam(FRONT);
     DeallocAllParam(REAR);
 
+    if (p_sys->p_image_handle) {
+        image_HandlerDelete( p_sys->p_image_handle );
+    }
+
     if(p_sys->p_proc_image) {
         picture_Release(p_sys->p_proc_image);
         p_sys->p_proc_image = NULL;
