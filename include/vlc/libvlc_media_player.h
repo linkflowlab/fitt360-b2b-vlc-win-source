@@ -2532,6 +2532,15 @@ LIBVLC_API int libvlc_media_player_set_role(libvlc_media_player_t *p_mi,
 
 /** @} media_player */
 
+enum libvlc_mouse_event_option {
+     MEVENT_PRESSED = 0,
+     MEVENT_RELEASED,
+     MEVENT_MOVED,
+     MEVENT_DOUBLE_CLICKED
+};
+
+LIBVLC_API void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned type, int btn, int x, int y);
+
 # ifdef __cplusplus
 }
 # endif
