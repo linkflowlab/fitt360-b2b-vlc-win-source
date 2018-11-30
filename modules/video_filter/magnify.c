@@ -126,7 +126,8 @@ static int Create( vlc_object_t *p_this )
     p_sys->i_zoom = 2*ZOOM_FACTOR;
     p_sys->b_visible = true;
     p_sys->i_last_activity = vlc_tick_now();
-    p_sys->i_hide_timeout = VLC_TICK_FROM_MS( var_InheritInteger( p_filter, "mouse-hide-timeout" ) );
+    //p_sys->i_hide_timeout = VLC_TICK_FROM_MS( var_InheritInteger( p_filter, "mouse-hide-timeout" ) );
+    p_sys->i_hide_timeout = VLC_TICK_FROM_MS(3000);
 
     /* */
     p_filter->pf_video_filter = Filter;
@@ -243,7 +244,6 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
     }
 
     /* print a small "VLC ZOOM" */
-
     if( b_visible || p_sys->i_last_activity + p_sys->i_hide_timeout > vlc_tick_now() )
         DrawZoomStatus( p_oyp->p_pixels, p_oyp->i_visible_pitch, p_oyp->i_pitch, p_oyp->i_lines,
                         1, v_h, b_visible );
@@ -275,25 +275,25 @@ static void DrawZoomStatus( uint8_t *pb_dst, int i_pitch, int i_width, int i_hei
                             int i_offset_x, int i_offset_y, bool b_visible )
 {
     static const char *p_hide =
-        "X   X X      XXXX   XXXXX  XXX   XXX  XX XX   X   X XXXXX XXXX  XXXXXL"
-        "X   X X     X          X  X   X X   X X X X   X   X   X   X   X X    L"
-        " X X  X     X         X   X   X X   X X   X   XXXXX   X   X   X XXXX L"
-        " X X  X     X        X    X   X X   X X   X   X   X   X   X   X X    L"
-        "  X   XXXXX  XXXX   XXXXX  XXX   XXX  X   X   X   X XXXXX XXXX  XXXXXL";
+        " XXXXX  XXX   XXX  XX XX   X   X XXXXX XXXX  XXXXXL"
+        "    X  X   X X   X X X X   X   X   X   X   X X    L"
+        "   X   X   X X   X X   X   XXXXX   X   X   X XXXX L"
+        "  X    X   X X   X X   X   X   X   X   X   X X    L"
+        " XXXXX  XXX   XXX  X   X   X   X XXXXX XXXX  XXXXXL";
     static const char *p_show =
-        "X   X X      XXXX   XXXXX  XXX   XXX  XX XX    XXXX X   X  XXX  X   XL"
-        "X   X X     X          X  X   X X   X X X X   X     X   X X   X X   XL"
-        " X X  X     X         X   X   X X   X X   X    XXX  XXXXX X   X X X XL"
-        " X X  X     X        X    X   X X   X X   X       X X   X X   X X X XL"
-        "  X   XXXXX  XXXX   XXXXX  XXX   XXX  X   X   XXXX  X   X  XXX   X X L";
+        " XXXXX  XXX   XXX  XX XX    XXXX X   X  XXX  X   XL"
+        "    X  X   X X   X X X X   X     X   X X   X X   XL"
+        "   X   X   X X   X X   X    XXX  XXXXX X   X X X XL"
+        "  X    X   X X   X X   X       X X   X X   X X X XL"
+        " XXXXX  XXX   XXX  X   X   XXXX  X   X  XXX   X X L";
     const char *p_draw = b_visible ? p_hide : p_show;
 
     for( int i = 0, x = i_offset_x, y = i_offset_y; p_draw[i] != '\0'; i++ )
     {
         if( p_draw[i] == 'X' )
         {
-            if( x < i_width && y < i_height )
-                pb_dst[y*i_pitch + x] = 0xff;
+            if( x < i_pitch && y < i_height )
+                pb_dst[y*i_width + x] = 0xff;
             x++;
         }
         else if( p_draw[i] == ' ' )
@@ -315,15 +315,19 @@ static void DrawRectangle( uint8_t *pb_dst, int i_pitch, int i_width, int i_heig
 
     /* top line */
     memset( &pb_dst[y * i_pitch + x], 0xff, i_w );
+    memset( &pb_dst[(y+1) * i_pitch + x], 0xff, i_w );
 
     /* left and right */
     for( int dy = 1; dy < i_h-1; dy++ )
     {
         pb_dst[(y+dy) * i_pitch + x +     0] = 0xff;
+        pb_dst[(y+dy) * i_pitch + x +     1] = 0xff;
         pb_dst[(y+dy) * i_pitch + x + i_w-1] = 0xff;
+        pb_dst[(y+dy) * i_pitch + x + i_w-2] = 0xff;
     }
 
     /* bottom line */
+    memset( &pb_dst[(y+i_h-2) * i_pitch + x], 0xff, i_w );
     memset( &pb_dst[(y+i_h-1) * i_pitch + x], 0xff, i_w );
 }
 

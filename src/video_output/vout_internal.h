@@ -256,6 +256,11 @@ void vout_ChangePause( vout_thread_t *, bool b_paused, vlc_tick_t i_date );
 void vout_MouseState(vout_thread_t *, const vlc_mouse_t *);
 
 /**
+ * Updates the pointing device state(custom).
+ */
+void vout_MouseStateCustom(vout_thread_t *, const vlc_mouse_t *);
+
+/**
  * This function will apply an offset on subtitle subpicture.
  */
 void spu_OffsetSubtitleDate( spu_t *p_spu, vlc_tick_t i_duration );

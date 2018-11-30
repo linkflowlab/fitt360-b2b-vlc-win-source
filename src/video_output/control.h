@@ -47,6 +47,7 @@ enum {
     VOUT_CONTROL_CROP_RATIO,            /* pair */
     VOUT_CONTROL_CROP_WINDOW,           /* window */
     VOUT_CONTROL_VIEWPOINT,             /* viewpoint */
+    VOUT_CONTROL_CUSTOM_MOUSE,          /* custom mouse(direct pass by)*/
 };
 
 typedef struct {

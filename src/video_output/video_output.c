@@ -244,6 +244,17 @@ void vout_MouseState(vout_thread_t *vout, const vlc_mouse_t *mouse)
     vout_control_Push(&vout->p->control, &cmd);
 }
 
+void vout_MouseStateCustom(vout_thread_t *vout, const vlc_mouse_t *mouse)
+{
+    assert(mouse);
+    vout_control_cmd_t cmd;
+    vout_control_cmd_Init(&cmd, VOUT_CONTROL_CUSTOM_MOUSE);
+    cmd.mouse = *mouse;
+
+    vout_control_Push(&vout->p->control, &cmd);
+}
+
+
 void vout_PutSubpicture( vout_thread_t *vout, subpicture_t *subpic )
 {
     vout_thread_sys_t *sys = vout->p;
@@ -1326,6 +1337,22 @@ static void ThreadProcessMouseState(vout_thread_t *vout,
         vout->p->mouse_event(m, vout->p->mouse_opaque);
 }
 
+static void ThreadCustomTranslateMouseState(vout_thread_t *vout,
+                                      const vlc_mouse_t *win_mouse)
+{
+    msg_Dbg(vout, "Execute ThreadCustomTranslateMouseState\n");
+    vout_display_t *vd = vout->p->display.vd;
+    vlc_mouse_t vid_mouse;
+    vout_display_place_t place;
+
+    /* Translate window coordinates to video coordinates */
+    vout_display_PlacePicture(&place, &vd->source, vd->cfg, false);
+    if (place.width <= 0 || place.height <= 0)
+        return;
+
+    vout_SendDisplayEventMouse(vout, win_mouse);
+}
+
 static int vout_Start(vout_thread_t *vout)
 {
     vlc_mouse_Init(&vout->p->mouse);
@@ -1521,6 +1548,9 @@ static int ThreadControl(vout_thread_t *vout, vout_control_cmd_t cmd)
         break;
     case VOUT_CONTROL_VIEWPOINT:
         vout_SetDisplayViewpoint(vout->p->display, &cmd.viewpoint);
+        break;
+    case VOUT_CONTROL_CUSTOM_MOUSE:
+        ThreadCustomTranslateMouseState(vout, &cmd.mouse);
         break;
     default:
         break;
