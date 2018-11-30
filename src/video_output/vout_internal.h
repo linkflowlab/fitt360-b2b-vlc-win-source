@@ -305,6 +305,11 @@ void vout_ChangePause( vout_thread_t *, bool b_paused, vlc_tick_t i_date );
 void vout_ChangeRate( vout_thread_t *, float rate );
 
 /**
+ * Updates the pointing device state(custom).
+ */
+void vout_MouseStateCustom(vout_thread_t *, const vlc_mouse_t *);
+
+/**
  * This function will change the delay of the vout
  * It is thread safe
  */

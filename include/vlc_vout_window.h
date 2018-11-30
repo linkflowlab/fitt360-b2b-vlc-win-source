@@ -88,6 +88,11 @@ enum vout_window_mouse_event_type {
     VOUT_WINDOW_MOUSE_PRESSED /**< Pointer button press or single click */,
     VOUT_WINDOW_MOUSE_RELEASED /**< Pointer button release */,
     VOUT_WINDOW_MOUSE_DOUBLE_CLICK /**< Double click */,
+    //CUSTOM
+    VOUT_WINDOW_MOUSE_MOVED_CUSTOM,
+    VOUT_WINDOW_MOUSE_PRESSED_CUSTOM,
+    VOUT_WINDOW_MOUSE_RELEASED_CUSTOM,
+    VOUT_WINDOW_MOUSE_DOUBLE_CLICK_CUSTOM,
 };
 
 /**
