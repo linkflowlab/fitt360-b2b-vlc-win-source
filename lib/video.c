@@ -41,6 +41,9 @@
 #include <vlc_url.h>
 
 #include "libvlc_internal.h"
+// This is not good, but we need to dereferencing vout_thread_sys_t
+#include "../src/video_output/vout_internal.h"
+#include "vlc_vout_window.h"
 #include "media_player_internal.h"
 #include <math.h>
 #include <assert.h>
@@ -1213,5 +1216,50 @@ void libvlc_video_set_transform_views( libvlc_media_player_t *p_mi, unsigned opt
         var_SetChecked( pp_vouts[i], psz_opt_name, i_type, new_val[i] );
         var_TriggerCallback( pp_vouts[i], "sub-source" );
         vlc_object_release( pp_vouts[i] );
+    }
+}
+
+void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned type, int btn, int x, int y)
+{
+    if(!p_mi) {
+        libvlc_printerr ("libvlc_send_mouse_event::Invalid media player");
+        return;
+    }
+
+    size_t i_vout_count;
+    vout_thread_t **pp_vouts = GetVouts( p_mi, &i_vout_count );
+    if(pp_vouts[VoutID] == NULL) {
+        libvlc_printerr ("libvlc_send_mouse_event::Invalid vout: %d", VoutID);
+        return;
+    }
+
+    if(btn >= 0) {
+        if(type == 0) {
+            // Pressed
+            const vout_window_mouse_event_t mouse = {
+                VOUT_WINDOW_MOUSE_PRESSED, x, y, btn
+            };
+            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+        } else if(type == 1) {
+            // Released
+            const vout_window_mouse_event_t mouse = {
+                VOUT_WINDOW_MOUSE_RELEASED, x, y, btn
+            };
+            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+        } else if(type == 2) {
+            // Moved
+            const vout_window_mouse_event_t mouse = {
+                VOUT_WINDOW_MOUSE_MOVED, x, y, 0
+            };
+            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+        } else if(type == 3) {
+            //Double clicked
+            const vout_window_mouse_event_t mouse = {
+                VOUT_WINDOW_MOUSE_DOUBLE_CLICK, x, y, btn
+            };
+            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+        } else {
+            libvlc_printerr ("libvlc_send_mouse_event::Invalid event type");
+        }
     }
 }
