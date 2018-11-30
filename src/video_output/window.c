@@ -239,6 +239,48 @@ static void vout_display_window_MouseEvent(vout_window_t *window,
             m->b_double_click = true;
             break;
 
+        // Custom Mouse events (direct passing through to client without mouse calibration)
+        case VOUT_WINDOW_MOUSE_MOVED_CUSTOM:
+            vlc_mouse_SetPosition(m, ev->x, ev->y);
+            state->last_left_press = INT64_MIN;
+            vout_MouseStateCustom(vout, m);
+            return;;
+
+        case VOUT_WINDOW_MOUSE_PRESSED_CUSTOM:
+            if (!window->info.has_double_click
+             && ev->button_mask == MOUSE_BUTTON_LEFT
+             && !vlc_mouse_IsLeftPressed(m))
+            {
+                const vlc_tick_t now = vlc_tick_now();
+
+                if (state->last_left_press != INT64_MIN
+                 && now - state->last_left_press < DOUBLE_CLICK_TIME)
+                {
+                    m->b_double_click = true;
+                    state->last_left_press = INT64_MIN;
+                }
+                else
+                    state->last_left_press = now;
+            }
+
+            vlc_mouse_SetPosition(m, ev->x, ev->y);
+            vlc_mouse_SetPressed(m, ev->button_mask);
+            vout_MouseStateCustom(vout, m);
+            return;
+
+        case VOUT_WINDOW_MOUSE_RELEASED_CUSTOM:
+            vlc_mouse_SetPosition(m, ev->x, ev->y);
+            vlc_mouse_SetReleased(m, ev->button_mask);
+            vout_MouseStateCustom(vout, m);
+            return;
+
+        case VOUT_WINDOW_MOUSE_DOUBLE_CLICK_CUSTOM:
+            vlc_mouse_SetPosition(m, ev->x, ev->y);
+            assert(window->info.has_double_click);
+            m->b_double_click = true;
+            vout_MouseStateCustom(vout, m);
+            return;
+
         default:
             vlc_assert_unreachable();
     }
