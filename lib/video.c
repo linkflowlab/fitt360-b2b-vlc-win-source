@@ -1107,6 +1107,7 @@ void libvlc_video_set_transform_views( libvlc_media_player_t *p_mi, unsigned opt
     }
 }
 
+// VoutID starts from 0
 void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned type, int btn, int x, int y)
 {
     if(!p_mi) {
@@ -1116,8 +1117,11 @@ void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned t
 
     size_t i_vout_count;
     vout_thread_t **pp_vouts = GetVouts( p_mi, &i_vout_count );
-    if(pp_vouts[VoutID] == NULL) {
+    if(i_vout_count <= VoutID || pp_vouts[VoutID] == NULL) {
         libvlc_printerr ("libvlc_send_mouse_event::Invalid vout: %d", VoutID);
+		for( size_t i = 0; i < i_vout_count; ++i )
+			vlc_object_release( pp_vouts[i] );
+
         return;
     }
 
@@ -1150,4 +1154,7 @@ void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned t
             libvlc_printerr ("libvlc_send_mouse_event::Invalid event type");
         }
     }
+
+	for( size_t i = 0; i < i_vout_count; ++i )
+        vlc_object_release( pp_vouts[i] );
 }
