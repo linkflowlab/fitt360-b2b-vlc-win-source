@@ -108,6 +108,10 @@ enum libvlc_event_e {
     libvlc_MediaPlayerSnapshotTaken,
     libvlc_MediaPlayerLengthChanged,
     libvlc_MediaPlayerVout,
+
+    libvlc_MediaPlayerRecordableChanged,
+    libvlc_MediaPlayerRecordingFinished,
+
     libvlc_MediaPlayerScrambledChanged,
     libvlc_MediaPlayerESAdded,
     libvlc_MediaPlayerESDeleted,
@@ -275,6 +279,14 @@ typedef struct libvlc_event_t
         {
             int new_pausable;
         } media_player_pausable_changed;
+        struct
+        {
+            int new_recordable;
+        } media_player_recordable_changed;
+        struct
+        {
+            char *psz_filename;
+        } media_player_recording_finished;
         struct
         {
             int new_scrambled;

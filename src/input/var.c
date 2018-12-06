@@ -529,6 +529,9 @@ void input_LegacyVarInit ( input_thread_t *p_input )
     var_Change( p_input, "spu-es", VLC_VAR_SETVALUE, val );
     var_Change( p_input, "spu-es", VLC_VAR_SETTEXT, _("Subtitle Track") );
 
+    /* ES Out */
+    var_Create( p_input, "input-record-path", VLC_VAR_STRING | VLC_VAR_DOINHERIT );
+
     var_Create( p_input, "spu-choice", VLC_VAR_INTEGER );
     var_SetInteger( p_input, "spu-choice", -1 );
 
