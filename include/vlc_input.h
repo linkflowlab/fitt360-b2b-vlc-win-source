@@ -211,6 +211,89 @@ static inline input_attachment_t *vlc_input_attachment_Duplicate( const input_at
                                      a->p_data, a->i_data );
 }
 
+/*****************************************************************************
+ * input defines/constants.
+ *****************************************************************************/
+
+/**
+ * This defines an opaque input resource handler.
+ */
+typedef struct input_resource_t input_resource_t;
+
+/**
+ * Main structure representing an input thread. This structure is mostly
+ * private. The only public fields are read-only and constant.
+ */
+struct input_thread_t
+{
+    struct vlc_common_members obj;
+};
+
+/**
+ * Record prefix string.
+ * TODO make it configurable.
+ */
+#define INPUT_RECORD_PREFIX "Record$ p%Y%m%d_%H%M%S"
+
+/*****************************************************************************
+ * Input events and variables
+ *****************************************************************************/
+
+/**
+ * \defgroup inputvariable Input variables
+ *
+ * The input provides multiples variable you can write to and/or read from.
+ *
+ * TODO complete the documentation.
+ * The read only variables are:
+ *  - "length"
+ *  - "can-seek" (if you can seek, it doesn't say if 'bar display' has be shown
+ *    or not, for that check position != 0.0)
+ *  - "can-pause"
+ *  - "can-rate"
+ *  - "can-rewind"
+ *  - "can-record" (if a stream can be recorded while playing)
+ *  - "teletext-es" (list of id from the spu tracks (spu-es) that are teletext, the
+ *                   variable value being the one currently selected, -1 if no teletext)
+ *  - "signal-quality"
+ *  - "signal-strength"
+ *  - "program-scrambled" (if the current program is scrambled)
+ *  - "cache" (level of data cached [0 .. 1])
+ *
+ * The read-write variables are:
+ *  - state (\see input_state_e)
+ *  - rate
+ *  - position
+ *  - time, time-offset
+ *  - title, next-title, prev-title
+ *  - chapter, next-chapter, next-chapter-prev
+ *  - program, audio-es, video-es, spu-es
+ *  - audio-delay, spu-delay
+ *  - bookmark (bookmark list)
+ *  - record
+ *  - frame-next
+ *  - navigation (list of "title %2i")
+ *  - "title %2i"
+ *
+ * The variable used for event is
+ *  - intf-event (\see input_event_type_e)
+ */
+
+/**
+ * Input state
+ *
+ * This enum is used by the variable "state"
+ */
+typedef enum input_state_e
+{
+    INIT_S = 0,
+    OPENING_S,
+    PLAYING_S,
+    PAUSE_S,
+    END_S,
+    ERROR_S,
+} input_state_e;
+
 /**
  * Input rate.
  *
