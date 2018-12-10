@@ -105,7 +105,7 @@ Mat GetSkin(Mat const &src)
     return dst;
 }
 
-bool isSkin(Mat const &src)
+bool isSkin(stobj* dat, Mat const &src)
 {
     Mat src_ycrcb, src_hsv;
     // OpenCV scales the YCrCb components, so that they
@@ -156,7 +156,7 @@ bool isSkin(Mat const &src)
     src_ycrcb.release();
 
     // Ratio threshold for deciding wheter skin or not
-    if(skinPixel >= src.rows * src.cols * skin_proportion_threshold)
+    if(skinPixel >= src.rows * src.cols * dat->skin_proportion_threshold)
         return true;
 
     return false;
@@ -175,34 +175,34 @@ static void _detectObjectThread(stobj* dat)
             break;
         }
 
-        if(advFaceDetectThread) {
-            advFaceDetectThread = false;
-            cvtColor(srcImg, frame_gray, COLOR_BGR2GRAY);
+        if(dat->advFaceDetectThread) {
+            dat->advFaceDetectThread = false;
+            cvtColor(dat->srcImg, frame_gray, COLOR_BGR2GRAY);
             equalizeHist(frame_gray, frame_gray);
 
             tmpfaces.clear();
             refinedfaces.clear();
-            face_cascade.detectMultiScale(frame_gray, tmpfaces, 1.1, cascade_sensitivity, CV_HAAR_DO_CANNY_PRUNING|CV_HAAR_FIND_BIGGEST_OBJECT|CV_HAAR_SCALE_IMAGE, Size(face_min_size, face_min_size), Size(face_max_size, face_max_size));
+            dat->face_cascade.detectMultiScale(frame_gray, tmpfaces, 1.1, dat->cascade_sensitivity, CV_HAAR_DO_CANNY_PRUNING|CV_HAAR_FIND_BIGGEST_OBJECT|CV_HAAR_SCALE_IMAGE, Size(dat->face_min_size, dat->face_min_size), Size(dat->face_max_size, dat->face_max_size));
 
             for(int i = 0; i < tmpfaces.size(); i++) {
-                Mat rectFace = srcImg(tmpfaces[i]);
+                Mat rectFace = dat->srcImg(tmpfaces[i]);
 
                 // To speed up, resize face samples to smaller one here.
                 Mat scaledRectFace;
-                resize(rectFace, scaledRectFace, cv::Size(face_min_size, face_min_size), 0, 0, INTER_NEAREST);
-                if(isSkin(scaledRectFace))
+                resize(rectFace, scaledRectFace, cv::Size(dat->face_min_size, dat->face_min_size), 0, 0, INTER_NEAREST);
+                if(isSkin(dat, scaledRectFace))
                     refinedfaces.push_back(tmpfaces[i]);
             }
 
-            //Mat sk = GetSkin(srcImg);
+            //Mat sk = GetSkin(dat->srcImg);
             //imshow("tt", sk);
             //waitKey(1);
 
-            mtxFaceDetect.lock();
-            faces.swap(refinedfaces);
-            mtxFaceDetect.unlock();
+            dat->mtxFaceDetect.lock();
+            dat->faces.swap(refinedfaces);
+            dat->mtxFaceDetect.unlock();
 
-            advFaceDetect = true;
+            dat->advFaceDetect = true;
 
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
         } else {
@@ -222,7 +222,7 @@ static void _detectObjectThread(stobj* dat)
 
 void InitFaceDetection(stobj* dat)
 {
-    if(!face_cascade.load(face_cascade_name)) {
+    if(!dat->face_cascade.load(dat->face_cascade_name)) {
         printf("--(!)Error loading face cascade\n");
         return;
     };
@@ -231,7 +231,7 @@ void InitFaceDetection(stobj* dat)
 }
 
 void InitFaceDetectionAndGetRef(stobj* dat, std::thread& thread) {
-    if(!face_cascade.load(face_cascade_name)) {
+    if(!dat->face_cascade.load(dat->face_cascade_name)) {
         printf("--(!)Error loading face cascade\n");
         return;
     };
@@ -239,19 +239,19 @@ void InitFaceDetectionAndGetRef(stobj* dat, std::thread& thread) {
     thread = std::thread(_detectObjectThread, dat);
 }
 
-void RunFaceDetectionIfPossible(Mat &image)
+void RunFaceDetectionIfPossible(stobj* dat, Mat &image)
 {
-    if(advFaceDetect) {
-        advFaceDetect = false;
-        image.convertTo(srcImg, CV_8U);
-        advFaceDetectThread = true;
+    if(dat->advFaceDetect) {
+        dat->advFaceDetect = false;
+        image.convertTo(dat->srcImg, CV_8U);
+        dat->advFaceDetectThread = true;
     }
 }
 
-void GetFaceDetectedResult(vector<Rect> &faceRects)
+void GetFaceDetectedResult(stobj* dat, vector<Rect> &faceRects)
 {
     // Copy face vector
-    mtxFaceDetect.lock();
-    faceRects.assign(faces.begin(), faces.end());
-    mtxFaceDetect.unlock();
+    dat->mtxFaceDetect.lock();
+    faceRects.assign(dat->faces.begin(), dat->faces.end());
+    dat->mtxFaceDetect.unlock();
 }
