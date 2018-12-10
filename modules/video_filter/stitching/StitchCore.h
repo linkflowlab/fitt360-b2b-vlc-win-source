@@ -5,6 +5,7 @@
 #include "opencv2/stitching/detail/blenders.hpp"
 #include "opencv2/stitching/detail/exposure_compensate.hpp"
 #include "opencv2/stitching/detail/motion_estimators.hpp"
+#include "LFSecurity.h"
 
 using namespace std;
 using namespace cv;
@@ -74,8 +75,8 @@ void ResetParam(camDir_t seq);
 void UpdateParam(camDir_t seq);
 // Memory deallocation for program termination
 void DeallocAllParam(camDir_t seq);
-int CalcCameraParam(camDir_t seq/*Front = 0, Rear = 1*/, Mat srcImg[]);
-int Render(camDir_t seq, Mat srcImg[], Mat destImg);
+int CalcCameraParam(stobj* dat, camDir_t seq/*Front = 0, Rear = 1*/, Mat srcImg[]);
+int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg);
 Rect findMinRect1b(const Mat1b& src);
 bool crop2InsideBox(int seq, Mat& src, Mat& dst);
 bool isCameraParamValid(camDir_t seq);

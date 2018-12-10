@@ -10,6 +10,8 @@
 #include <mutex>
 #endif
 
+#include "LFSecurity.h"
+
 using namespace std;
 using namespace cv;
 
@@ -31,8 +33,8 @@ static int cascade_sensitivity = 4;
 static int face_min_size = 20;
 static int face_max_size = 400;
 
-void InitFaceDetection();
-void InitFaceDetectionAndGetRef(std::thread& thread);
+void InitFaceDetection(stobj* dat);
+void InitFaceDetectionAndGetRef(stobj* dat, std::thread& thread);
 void RunFaceDetectionIfPossible(Mat &image);
 void GetFaceDetectedResult(vector<Rect> &faceRects);
 
