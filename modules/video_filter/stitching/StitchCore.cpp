@@ -33,9 +33,6 @@ using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-bool applyROItoFeatureDetection = true;
-string features_type = "orb";
-
 void InitParam(camDir_t seq, int num_image_in_each_seq)
 {
     calcParam[seq].num_images = num_image_in_each_seq;
@@ -111,7 +108,7 @@ void DeallocAllParam(camDir_t seq)
 	vector<int>().swap(renderParam[seq].indices);
 }
 
-int CalcCameraParam(camDir_t seq, Mat srcImg[])
+int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
 {
 #if ENABLE_CALC_LOG
     int64 app_start_time = getTickCount();
@@ -125,18 +122,18 @@ int CalcCameraParam(camDir_t seq, Mat srcImg[])
     bool is_work_scale_set = false, is_seam_scale_set = false;
 
     Ptr<FeaturesFinder> finder;
-    if (features_type == "surf")
+    if (dat->features_type == 1/*surf*/)
     {
         finder = makePtr<SurfFeaturesFinder>();
     }
     // ORB사용시, OPENCV matcher에서 BFMatcher 및 NORM_HAMMING을 사용하도록 수정하여야 한다.
-    else if (features_type == "orb")
+    else if (dat->features_type == 0/*orb*/)
     {
         finder = makePtr<OrbFeaturesFinder>();
     }
     else
     {
-        cout << "Unknown 2D features type: '" << features_type << "'.\n";
+        cout << "Unknown 2D features type: '" << dat->features_type << "'.\n";
         return -1;
     }
 
@@ -183,7 +180,7 @@ int CalcCameraParam(camDir_t seq, Mat srcImg[])
             is_seam_scale_set = true;
         }
 
-        if(applyROItoFeatureDetection) {
+        if(dat->applyROItoFeatureDetection) {
             Mat partImg;
             if(i == 0) {
                 partImg = img(cv::Rect(img.cols * (1.0 - ratioROI), 0, img.cols * ratioROI, img.rows));
@@ -323,7 +320,7 @@ int CalcCameraParam(camDir_t seq, Mat srcImg[])
     return 0;
 }
 
-int Render(camDir_t seq, Mat srcImg[], Mat destImg)
+int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
 {
 #if ENABLE_RENDER_LOG
     int64 app_start_time = getTickCount();
@@ -604,11 +601,11 @@ int Render(camDir_t seq, Mat srcImg[], Mat destImg)
 	{
 	case FRONT:
 		ptImgL = Point(0, 0);
-		ptImgR = Point(OutWidth/2, 0);
+		ptImgR = Point(dat->OutWidth/2, 0);
 		break;
 	case REAR:
-		ptImgL = Point(0, OutHeight/2);
-		ptImgR = Point(OutWidth/2, OutHeight/2);
+		ptImgL = Point(0, dat->OutHeight/2);
+		ptImgR = Point(dat->OutWidth/2, dat->OutHeight/2);
 		break;
 	default:
 		LOGR("[ERR] Unexpected ERROR. Wierd image sequence");
@@ -620,19 +617,19 @@ int Render(camDir_t seq, Mat srcImg[], Mat destImg)
 			Mat viewport;
 			result.convertTo(result, CV_8UC3);
 			if(crop2InsideBox(seq, result, viewport)) {
-				resize(viewport, viewport, cv::Size(OutWidth, OutHeight/2), 0, 0, CV_INTER_LINEAR);
+				resize(viewport, viewport, cv::Size(dat->OutWidth, dat->OutHeight/2), 0, 0, CV_INTER_LINEAR);
 				viewport.copyTo(destImg(cv::Rect(ptImgL, Size(viewport.cols, viewport.rows))));
 				//rectangle(gray, box, rectColor(255, 0, 0), 2);
 			} else {
 				// Fall back: If cannot obtain unique rectangle blob, displays separate screen
-				resize(srcImg[0], srcImg[0], cv::Size(OutWidth/2, OutHeight/2), 0, 0, CV_INTER_LINEAR);
+				resize(srcImg[0], srcImg[0], cv::Size(dat->OutWidth/2, dat->OutHeight/2), 0, 0, CV_INTER_LINEAR);
 				srcImg[0].copyTo(destImg(cv::Rect(ptImgL ,Size(srcImg[0].cols, srcImg[0].rows))));
-				resize(srcImg[1], srcImg[1], cv::Size(OutWidth/2, OutHeight/2), 0, 0, CV_INTER_LINEAR);
+				resize(srcImg[1], srcImg[1], cv::Size(dat->OutWidth/2, dat->OutHeight/2), 0, 0, CV_INTER_LINEAR);
 				srcImg[1].copyTo(destImg(cv::Rect(ptImgR, Size(srcImg[1].cols, srcImg[1].rows))));
 			}
 			viewport.release();
 		} else {
-			resize(result, result, cv::Size(OutWidth, OutHeight/2), 0, 0, CV_INTER_LINEAR);
+			resize(result, result, cv::Size(dat->OutWidth, dat->OutHeight/2), 0, 0, CV_INTER_LINEAR);
 			result.copyTo(destImg(cv::Rect(ptImgL ,Size(result.cols, result.rows))));
 		}
 	} else {

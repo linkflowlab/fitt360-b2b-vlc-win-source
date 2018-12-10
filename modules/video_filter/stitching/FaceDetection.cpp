@@ -164,13 +164,13 @@ bool isSkin(Mat const &src)
 
 //End of Skin Detection//
 
-static void _detectObjectThread()
+static void _detectObjectThread(stobj* dat)
 {
     Mat frame_gray;
     vector<Rect> tmpfaces;
     vector<Rect> refinedfaces;
     while(true) {
-        if(bSigStop) {
+        if(dat->bSigStop) {
             printf("_detectObjectThread exit\n");
             break;
         }
@@ -220,24 +220,23 @@ static void _detectObjectThread()
     tmpfaces.clear();
 }
 
-void InitFaceDetection()
+void InitFaceDetection(stobj* dat)
 {
     if(!face_cascade.load(face_cascade_name)) {
         printf("--(!)Error loading face cascade\n");
         return;
     };
 
-    std::thread detectObjThread(_detectObjectThread);
-    detectObjThread.detach();
+    std::thread detectObjThread(_detectObjectThread, dat);
 }
 
-void InitFaceDetectionAndGetRef(std::thread& thread) {
+void InitFaceDetectionAndGetRef(stobj* dat, std::thread& thread) {
     if(!face_cascade.load(face_cascade_name)) {
         printf("--(!)Error loading face cascade\n");
         return;
     };
 
-    thread = std::thread(_detectObjectThread);
+    thread = std::thread(_detectObjectThread, dat);
 }
 
 void RunFaceDetectionIfPossible(Mat &image)

@@ -43,7 +43,6 @@
 
 #include "LFSecurity.h"
 #include "stitching.h"
-#include "LFUtil.h"
 #include "StitchCore.h"
 #include "FaceDetection.h"
 
@@ -70,165 +69,171 @@ typedef struct {
     image_handler_t* p_image_handle;
     picture_t* p_proc_image;
     picture_t* p_dest_image;
+
+    stobj* dat;
+    PrivThreads calcThreads;
 } filter_sys_t;
 
-void InitStreamStitcher(int srcWidth, int srcHeight, int outWidth, int outHeight, string fType, int interval, bool bFaceDetectON)
+void InitStreamStitcher(stobj* dat, int srcWidth, int srcHeight, int outWidth, int outHeight, int fType, int interval, bool bFaceDetectON)
 {
-    frame = 0;
-    isFrameAvailable = false;
+    dat->frame = 0;
+    dat->isFrameAvailable = false;
 
-    features_type = fType;
-    RTSP_SrcWidth = srcWidth;
-    RTSP_SrcHeight = srcHeight;
+    dat->features_type = fType;
+    dat->RTSP_SrcWidth = srcWidth;
+    dat->RTSP_SrcHeight = srcHeight;
 
     // If bandwidth is under 0.5Mpx, we don't limit feature detection region
     //if(RTSP_SrcWidth*RTSP_SrcHeight < 5 * 1e5) {
     //    if(features_type.compare("orb") == 0) {
-            applyROItoFeatureDetection = false;
+            dat->applyROItoFeatureDetection = false;
     //    }
     //    padding = 0;
     //}
 
-    OutWidth = outWidth;
-    OutHeight = outHeight;
+    dat->OutWidth = outWidth;
+    dat->OutHeight = outHeight;
 
-    recalc_interval = interval;
-    bFaceDetect = bFaceDetectON;
+    dat->recalc_interval = interval;
+    dat->bFaceDetect = bFaceDetectON;
 }
 
-void RunStreamStitcher()
+void RunStreamStitcher(stobj* dat, PrivThreads &calcThreads)
 {
-    stitchFrontThread = std::thread(_CalcFrontThread);
-    stitchRearThread = std::thread(_CalcRearThread);
+    // FIXME(AIDEN): Now we use non-static thread. Not sure this is better than static here(not tested)
+    // Need to check memory garbage
+    // https://stackoverflow.com/questions/22657770/using-c-11-multithreading-on-non-static-member-function
+    dat->stitchFrontThread = std::thread(&PrivThreads::_CalcFrontThread, &calcThreads, dat);
+    dat->stitchRearThread = std::thread(&PrivThreads::_CalcRearThread, &calcThreads, dat);
 
-    if(bFaceDetect)
-        InitFaceDetectionAndGetRef(faceDetectThread);
+    if(dat->bFaceDetect)
+        InitFaceDetectionAndGetRef(dat, dat->faceDetectThread);
 }
 
-void BindStreamStitcherInputBuf()
+void BindStreamStitcherInputBuf(stobj* dat)
 {
     // subMat은 buffer의 물리적인 주소에 dependent하므로, 데이터의 위치가 셋업 된 이후에 subMat을 설정해주어야 한다.
-    partFrames[0] = RTSPframe(cv::Rect(padding, padding, RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
-    partFrames[1] = RTSPframe(cv::Rect(RTSPframe.cols/2, padding, RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
-    partFrames[2] = RTSPframe(cv::Rect(padding, RTSPframe.rows/2 ,RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
-    partFrames[3] = RTSPframe(cv::Rect(RTSPframe.cols/2, RTSPframe.rows/2 ,RTSPframe.cols/2 - padding, RTSPframe.rows/2 - padding));
+    dat->partFrames[0] = dat->RTSPframe(cv::Rect(dat->padding, dat->padding, dat->RTSPframe.cols/2 - dat->padding, dat->RTSPframe.rows/2 - dat->padding));
+    dat->partFrames[1] = dat->RTSPframe(cv::Rect(dat->RTSPframe.cols/2, dat->padding, dat->RTSPframe.cols/2 - dat->padding, dat->RTSPframe.rows/2 - dat->padding));
+    dat->partFrames[2] = dat->RTSPframe(cv::Rect(dat->padding, dat->RTSPframe.rows/2 ,dat->RTSPframe.cols/2 - dat->padding, dat->RTSPframe.rows/2 - dat->padding));
+    dat->partFrames[3] = dat->RTSPframe(cv::Rect(dat->RTSPframe.cols/2, dat->RTSPframe.rows/2 ,dat->RTSPframe.cols/2 - dat->padding, dat->RTSPframe.rows/2 - dat->padding));
 }
 
-static void _CalcFrontThread()
+void PrivThreads::_CalcFrontThread(stobj* dat)
 {
     InitParam(FRONT, 2);
     while(true) {
-        if(bSigStop) {
+        if(dat->bSigStop) {
             cout << "CalcFrontThread exit" << endl;
             break;
         }
 
-        if (!isFrameAvailable){
+        if (!dat->isFrameAvailable){
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
-        mtxBuf.lock();
-        Mat left = partFrames[0].clone();
-        Mat right = partFrames[1].clone();
-        mtxBuf.unlock();
+        dat->mtxBuf.lock();
+        Mat left = dat->partFrames[0].clone();
+        Mat right = dat->partFrames[1].clone();
+        dat->mtxBuf.unlock();
 
         Mat input[2] = {left, right};
-        int ret = CalcCameraParam(FRONT, input);
+        int ret = CalcCameraParam(dat, FRONT, input);
         left.release();
         right.release();
         if(ret != -1 && isCameraParamValid(FRONT)) {
-            mtxFrontDraw.lock();
+            dat->mtxFrontDraw.lock();
             UpdateParam(FRONT);
-            mtxFrontDraw.unlock();
-            isParamAvailable[FRONT] = true;
+            dat->mtxFrontDraw.unlock();
+            dat->isParamAvailable[FRONT] = true;
 
             // If succeded, rest for a while in order to stabilize screen
-            std::this_thread::sleep_for(std::chrono::milliseconds(recalc_interval));
+            std::this_thread::sleep_for(std::chrono::milliseconds(dat->recalc_interval));
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
-static void _CalcRearThread()
+void PrivThreads::_CalcRearThread(stobj* dat)
 {
     InitParam(REAR, 2);
     while(true) {
-        if(bSigStop) {
+        if(dat->bSigStop) {
             cout << "CalcRearThread exit" << endl;
             break;
         }
 
-        if (!isFrameAvailable) {
+        if (!dat->isFrameAvailable) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
-        mtxBuf.lock();
-        Mat left = partFrames[2].clone();
-        Mat right = partFrames[3].clone();
-        mtxBuf.unlock();
+        dat->mtxBuf.lock();
+        Mat left = dat->partFrames[2].clone();
+        Mat right = dat->partFrames[3].clone();
+        dat->mtxBuf.unlock();
 
         Mat input[2] = {left, right};
-        int ret = CalcCameraParam(REAR, input);
+        int ret = CalcCameraParam(dat, REAR, input);
         left.release();
         right.release();
         if(ret != -1 && isCameraParamValid(REAR)) {
-            mtxRearDraw.lock();
+            dat->mtxRearDraw.lock();
             UpdateParam(REAR);
-            mtxRearDraw.unlock();
-            isParamAvailable[REAR] = true;
+            dat->mtxRearDraw.unlock();
+            dat->isParamAvailable[REAR] = true;
 
             // If succeded, rest for a while in order to stabilize screen
-            std::this_thread::sleep_for(std::chrono::milliseconds(recalc_interval));
+            std::this_thread::sleep_for(std::chrono::milliseconds(dat->recalc_interval));
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
-void FrameRender()
+void FrameRender(stobj* dat)
 {
-    if(isParamAvailable[FRONT]) {
-        mtxFrontDraw.lock();
-        Mat input[2] = {partFrames[0], partFrames[1]};
-        Render(FRONT, input, RTSPframe_result);
-        mtxFrontDraw.unlock();
+    if(dat->isParamAvailable[FRONT]) {
+        dat->mtxFrontDraw.lock();
+        Mat input[2] = {dat->partFrames[0], dat->partFrames[1]};
+        Render(dat, FRONT, input, dat->RTSPframe_result);
+        dat->mtxFrontDraw.unlock();
     } else {
         Mat resized;
-        if(RTSPframe.cols != RTSPframe_result.cols || RTSPframe.rows != RTSPframe_result.rows) {
-            resize(RTSPframe(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2)), resized, Size(RTSPframe_result.cols, RTSPframe_result.rows/2), INTER_LINEAR);
+        if(dat->RTSPframe.cols != dat->RTSPframe_result.cols || dat->RTSPframe.rows != dat->RTSPframe_result.rows) {
+            resize(dat->RTSPframe(Rect(0, 0, dat->RTSPframe.cols, dat->RTSPframe.rows/2)), resized, Size(dat->RTSPframe_result.cols, dat->RTSPframe_result.rows/2), INTER_LINEAR);
         } else {
-            resized = RTSPframe(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2));
+            resized = dat->RTSPframe(Rect(0, 0, dat->RTSPframe.cols, dat->RTSPframe.rows/2));
         }
-        resized.copyTo(RTSPframe_result(Rect(0, 0, RTSPframe_result.cols, RTSPframe_result.rows/2)));
+        resized.copyTo(dat->RTSPframe_result(Rect(0, 0, dat->RTSPframe_result.cols, dat->RTSPframe_result.rows/2)));
     }
 
-    if(isParamAvailable[REAR]) {
-        mtxRearDraw.lock();
-        Mat input[2] = {partFrames[2], partFrames[3]};
-        Render(REAR, input, RTSPframe_result);
-        mtxRearDraw.unlock();
+    if(dat->isParamAvailable[REAR]) {
+        dat->mtxRearDraw.lock();
+        Mat input[2] = {dat->partFrames[2], dat->partFrames[3]};
+        Render(dat, REAR, input, dat->RTSPframe_result);
+        dat->mtxRearDraw.unlock();
     } else {
         Mat resized;
-        if(RTSPframe.cols != RTSPframe_result.cols || RTSPframe.rows != RTSPframe_result.rows) {
-            resize(RTSPframe(Rect(0, RTSPframe.rows/2, RTSPframe.cols, RTSPframe.rows/2)), resized, Size(RTSPframe_result.cols, RTSPframe_result.rows/2), INTER_LINEAR);
+        if(dat->RTSPframe.cols != dat->RTSPframe_result.cols || dat->RTSPframe.rows != dat->RTSPframe_result.rows) {
+            resize(dat->RTSPframe(Rect(0, dat->RTSPframe.rows/2, dat->RTSPframe.cols, dat->RTSPframe.rows/2)), resized, Size(dat->RTSPframe_result.cols, dat->RTSPframe_result.rows/2), INTER_LINEAR);
         } else {
-            resized = RTSPframe(Rect(0, RTSPframe.rows/2, RTSPframe.cols, RTSPframe.rows/2));
+            resized = dat->RTSPframe(Rect(0, dat->RTSPframe.rows/2, dat->RTSPframe.cols, dat->RTSPframe.rows/2));
         }
-        resized.copyTo(RTSPframe_result(Rect(0, RTSPframe_result.rows/2, RTSPframe_result.cols, RTSPframe_result.rows/2)));
+        resized.copyTo(dat->RTSPframe_result(Rect(0, dat->RTSPframe_result.rows/2, dat->RTSPframe_result.cols, dat->RTSPframe_result.rows/2)));
     }
 
-    if(bFaceDetect) {
-        RunFaceDetectionIfPossible(RTSPframe_result);
+    if(dat->bFaceDetect) {
+        RunFaceDetectionIfPossible(dat->RTSPframe_result);
 
         vector<Rect> faces;
         GetFaceDetectedResult(faces);
         for( size_t i = 0; i < faces.size(); i++ ){
             Point lb(faces[i].x + faces[i].width, faces[i].y + faces[i].height);
             Point tr(faces[i].x, faces[i].y);
-            rectangle(RTSPframe_result, lb, tr, Scalar(0, 255, 0), 3, 4, 0);
+            rectangle(dat->RTSPframe_result, lb, tr, Scalar(0, 255, 0), 3, 4, 0);
         }
 
         // Release vector memory
@@ -261,6 +266,12 @@ static int Create( vlc_object_t *p_this )
     if(p_sys == NULL )
         return VLC_ENOMEM;
 
+    //stobj* _dat = (stobj*)malloc(sizeof(stobj));
+    stobj* _dat = new stobj();
+    if(_dat == NULL)
+        return VLC_ENOMEM;
+
+    p_sys->dat = _dat;
     p_filter->p_sys = p_sys;
     p_filter->pf_video_filter = Filter;
     p_sys->p_image_handle = image_HandlerCreate( p_filter );
@@ -274,25 +285,26 @@ static int Create( vlc_object_t *p_this )
 
 static void Destroy( vlc_object_t *p_this )
 {
-    // Prevent destroy repeat
-    if(!stitcherInitDone)
-        return;
-
     filter_t *p_filter = (filter_t *)p_this;
     filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
 
-    isParamAvailable[FRONT] = false;
-    isParamAvailable[REAR] = false;
+    // Prevent destroy repeat
+    if(!p_sys || !p_sys->dat || !p_sys->dat->stitcherInitDone)
+        return;
 
-    stitcherInitDone = false;
-    bSigStop = true;
+    stobj* dat = p_sys->dat;
 
-    if(stitchFrontThread.joinable())
-        stitchFrontThread.join();
-    if(stitchRearThread.joinable())
-        stitchRearThread.join();
-    if(bFaceDetect && faceDetectThread.joinable())
-        faceDetectThread.join();
+    //dat->isParamAvailable[FRONT] = false;
+    //dat->isParamAvailable[REAR] = false;
+    //dat->stitcherInitDone = false;
+    dat->bSigStop = true;
+
+    if(dat->stitchFrontThread.joinable())
+        dat->stitchFrontThread.join();
+    if(dat->stitchRearThread.joinable())
+        dat->stitchRearThread.join();
+    if(dat->bFaceDetect && dat->faceDetectThread.joinable())
+        dat->faceDetectThread.join();
 
     DeallocAllParam(FRONT);
     DeallocAllParam(REAR);
@@ -310,26 +322,29 @@ static void Destroy( vlc_object_t *p_this )
         p_sys->p_dest_image = NULL;
     }
 
-    RTSPframe.release();
-    RTSPframe_result.release();
-
-    bSigStop = false;
+    //dat->bSigStop = false;
+    if(dat) {
+        dat->RTSPframe.release();
+        dat->RTSPframe_result.release();
+        free(dat);
+        dat = NULL;
+    }
 
     printf("Close stitching plugin\n");
     free( p_sys );
 }
 
-static void ReleaseImages( filter_t* p_filter )
+static void ReleaseImages(stobj* dat, filter_t* p_filter )
 {
     filter_sys_t* p_sys = (filter_sys_t*)p_filter->p_sys;
     if(p_sys->p_dest_image) {
         picture_Release(p_sys->p_dest_image);
         p_sys->p_dest_image = NULL;
     }
-    RTSPframe_result.release();
+    dat->RTSPframe_result.release();
 }
 
-static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
+static void PictureToRGBMat(stobj* dat, filter_t* p_filter, picture_t* p_in, Mat& m)
 {
     filter_sys_t* p_sys = (filter_sys_t *)p_filter->p_sys;
 
@@ -348,7 +363,7 @@ static void PictureToRGBMat( filter_t* p_filter, picture_t* p_in, Mat& m)
         picture_Release(p_sys->p_proc_image);
         p_sys->p_proc_image = NULL;
     }
-    RTSPframe.release();
+    dat->RTSPframe.release();
 
     p_sys->p_proc_image = image_Convert(p_sys->p_image_handle, p_in, &(p_in->format), &fmt_out );
 
@@ -415,37 +430,44 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
         return NULL;
     }
 
-    // Prevent repeat create
-    if(!stitcherInitDone) {
-        stitcherInitDone = true;
-        int width = abs(p_pic->p[0].i_visible_pitch / p_pic->p[0].i_pixel_pitch);
-        int height = abs(p_pic->p[0].i_visible_lines);
-        InitStreamStitcher(width, height, width, height, "orb");
-        RunStreamStitcher();
+    filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
+    if(!p_sys || !p_sys->dat) {
+        msg_Warn( p_filter, "can't get stitching data" );
+        picture_Release( p_pic );
+        return NULL;
     }
 
-    filter_sys_t *p_sys = (filter_sys_t *)p_filter->p_sys;
+    stobj* dat = (stobj*)p_sys->dat;
 
-    isFrameAvailable = false;
-    mtxBuf.lock();
+    // Prevent repeat create
+    if(!dat->stitcherInitDone) {
+        dat->stitcherInitDone = true;
+        int width = abs(p_pic->p[0].i_visible_pitch / p_pic->p[0].i_pixel_pitch);
+        int height = abs(p_pic->p[0].i_visible_lines);
+        InitStreamStitcher(dat, width, height, width, height, 0/*orb*/, 2000, false);
+        RunStreamStitcher(dat, p_sys->calcThreads);
+    }
+
+    dat->isFrameAvailable = false;
+    dat->mtxBuf.lock();
     // Make OpenCV mat from picture and allocate separately
-    PictureToRGBMat(p_filter, p_pic, RTSPframe);
+    PictureToRGBMat(dat, p_filter, p_pic, dat->RTSPframe);
     // Set separated sub mat of each camera
-    BindStreamStitcherInputBuf();
-    mtxBuf.unlock();
-    isFrameAvailable = true;
+    BindStreamStitcherInputBuf(dat);
+    dat->mtxBuf.unlock();
+    dat->isFrameAvailable = true;
 
     // Prepare dest picture on which we draw
-    PrepareDestPicture(p_filter, p_pic, RTSPframe_result);
+    PrepareDestPicture(p_filter, p_pic, dat->RTSPframe_result);
 
     // Render scene of current input
-    FrameRender();
+    FrameRender(dat);
 
     // Make output picture(YUV) from dest picture(RGB)
     PrepareResultPicture(p_filter, p_pic, p_outpic);
 
     // Release current output buffer and Mat
-    ReleaseImages(p_filter);
+    ReleaseImages(dat, p_filter);
 
     // Release picture in order to get next picture
     picture_Release(p_pic);
