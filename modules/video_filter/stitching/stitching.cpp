@@ -226,10 +226,10 @@ void FrameRender(stobj* dat)
     }
 
     if(dat->bFaceDetect) {
-        RunFaceDetectionIfPossible(dat->RTSPframe_result);
+        RunFaceDetectionIfPossible(dat, dat->RTSPframe_result);
 
         vector<Rect> faces;
-        GetFaceDetectedResult(faces);
+        GetFaceDetectedResult(dat, faces);
         for( size_t i = 0; i < faces.size(); i++ ){
             Point lb(faces[i].x + faces[i].width, faces[i].y + faces[i].height);
             Point tr(faces[i].x, faces[i].y);
@@ -444,7 +444,7 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_pic )
         dat->stitcherInitDone = true;
         int width = abs(p_pic->p[0].i_visible_pitch / p_pic->p[0].i_pixel_pitch);
         int height = abs(p_pic->p[0].i_visible_lines);
-        InitStreamStitcher(dat, width, height, width, height, 0/*orb*/, 2000, false);
+        InitStreamStitcher(dat, width, height, width, height, 0/*orb*/, 1500, false);
         RunStreamStitcher(dat, p_sys->calcThreads);
     }
 

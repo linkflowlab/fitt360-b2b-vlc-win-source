@@ -14,6 +14,7 @@
 #include <mutex>
 #endif
 
+#include "opencv2/objdetect.hpp"
 #include "opencv2/stitching/detail/camera.hpp"
 #include "opencv2/stitching/detail/blenders.hpp"
 #include "opencv2/stitching/detail/exposure_compensate.hpp"
@@ -103,7 +104,7 @@ typedef struct meta_data_t {
     std::thread stitchRearThread;
     std::thread faceDetectThread;
 
-    // Stitching Core parameters
+    /* Stitching Core parameters */
     bool applyROItoFeatureDetection = true;
     int features_type = 0; /*0: orb 1: surf*/
 
@@ -112,14 +113,14 @@ typedef struct meta_data_t {
 	double seam_megapix = 0.1;
 	double compose_megapix = -1;
 	float conf_thresh = 0.0f;
-	string ba_cost_func = "ray";
-	string ba_refine_mask = "xxxxx";
+	const string ba_cost_func = "ray";
+	const string ba_refine_mask = "xxxxx";
 	bool do_wave_correct = false;
 	WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
-	string warp_type = "spherical";
+	const string warp_type = "spherical";
 	int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
 	float match_conf = 0.3f;
-	string seam_find_type = "gc_color";
+	const string seam_find_type = "gc_color";
 	int blend_type = Blender::MULTI_BAND;
 	float blend_strength = 5;
 	int feature_detect_threshold = 6;
@@ -134,5 +135,24 @@ typedef struct meta_data_t {
 
 	// Stitching Parameter which is used by rendering loop. This parameter must not be null always.
 	stRenderParam renderParam[2];
+
+	/* Face Detection params */
+	// Basic
+	std::mutex mtxFaceDetect;
+	const string face_cascade_name = "haarcascade_frontalface_alt2.xml";
+	CascadeClassifier face_cascade;
+
+	// Image to extract face from
+	Mat srcImg;
+
+	// Dominant rect vertor of faces
+	vector<Rect> faces;
+
+	// Detection options
+	bool advFaceDetect = true, advFaceDetectThread = false;
+	float skin_proportion_threshold = 0.3;
+	int cascade_sensitivity = 4;
+	int face_min_size = 20;
+	int face_max_size = 400;
 } stobj;
 #endif // _LFSecurity_H_
