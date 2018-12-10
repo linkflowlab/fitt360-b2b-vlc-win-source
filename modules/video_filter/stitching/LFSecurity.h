@@ -14,8 +14,14 @@
 #include <mutex>
 #endif
 
+#include "opencv2/stitching/detail/camera.hpp"
+#include "opencv2/stitching/detail/blenders.hpp"
+#include "opencv2/stitching/detail/exposure_compensate.hpp"
+#include "opencv2/stitching/detail/motion_estimators.hpp"
+
 using namespace std;
 using namespace cv;
+using namespace cv::detail;
 
 // Camera pairs enumeration
 typedef enum {
@@ -23,6 +29,34 @@ typedef enum {
 	REAR,
 	CAMDIR_END
 } camDir_t;
+
+typedef struct _stCalcParam{
+        int num_images; // Num of Images in each sequence
+        double work_scale;
+        double seam_scale;
+        double compose_scale;
+        vector<CameraParams> cameras;
+        float warped_image_scale;
+        double seam_work_aspect;
+        vector<int> indices;
+        vector<Mat> images;
+} stCalcParam;
+
+typedef struct _stRenderParam{
+        // Updated recently flag
+        bool updated;
+        int num_images; // Num of Images in each sequence
+        double work_scale;
+        double seam_scale;
+        double compose_scale;
+        vector<CameraParams> cameras;
+        float warped_image_scale;
+        double seam_work_aspect;
+        vector<int> indices;
+        vector<Mat> images;
+        // valid box size cache for rendering (if doCrop ON)
+        Rect validBox;
+} stRenderParam;
 
 typedef struct meta_data_t {
     /*Input/Output Dimensions*/
@@ -72,5 +106,33 @@ typedef struct meta_data_t {
     // Stitching Core parameters
     bool applyROItoFeatureDetection = true;
     int features_type = 0; /*0: orb 1: surf*/
+
+	bool try_cuda = false;
+	double work_megapix = -1.0;
+	double seam_megapix = 0.1;
+	double compose_megapix = -1;
+	float conf_thresh = 0.0f;
+	string ba_cost_func = "ray";
+	string ba_refine_mask = "xxxxx";
+	bool do_wave_correct = false;
+	WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
+	string warp_type = "spherical";
+	int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
+	float match_conf = 0.3f;
+	string seam_find_type = "gc_color";
+	int blend_type = Blender::MULTI_BAND;
+	float blend_strength = 5;
+	int feature_detect_threshold = 6;
+	float ratioROI = 0.45;
+	bool doCrop = true;
+	float filter_conf = 0.8;
+	float rect_search_start = 0.01;
+	float rect_search_end = 0.75;
+
+	// Stitching Parameter buffer in use while cacluation. renderParam will be updated with this value, if the work is suceeded.
+	stCalcParam calcParam[2];
+
+	// Stitching Parameter which is used by rendering loop. This parameter must not be null always.
+	stRenderParam renderParam[2];
 } stobj;
 #endif // _LFSecurity_H_

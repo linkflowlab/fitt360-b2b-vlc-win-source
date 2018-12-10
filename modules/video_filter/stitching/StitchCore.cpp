@@ -33,79 +33,79 @@ using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-void InitParam(camDir_t seq, int num_image_in_each_seq)
+void InitParam(stobj* dat, camDir_t seq, int num_image_in_each_seq)
 {
-    calcParam[seq].num_images = num_image_in_each_seq;
-    renderParam[seq].num_images = num_image_in_each_seq;
+    dat->calcParam[seq].num_images = num_image_in_each_seq;
+    dat->renderParam[seq].num_images = num_image_in_each_seq;
 
-    renderParam[seq].updated = false;
-    calcParam[seq].work_scale = 1;
-    renderParam[seq].work_scale = 1;
-    calcParam[seq].seam_scale = 1;
-    renderParam[seq].seam_scale = 1;
-    calcParam[seq].compose_scale = 1;
-    renderParam[seq].compose_scale = 1;
-    calcParam[seq].seam_work_aspect = 1;
-    renderParam[seq].seam_work_aspect = 1;
+    dat->renderParam[seq].updated = false;
+    dat->calcParam[seq].work_scale = 1;
+    dat->renderParam[seq].work_scale = 1;
+    dat->calcParam[seq].seam_scale = 1;
+    dat->renderParam[seq].seam_scale = 1;
+    dat->calcParam[seq].compose_scale = 1;
+    dat->renderParam[seq].compose_scale = 1;
+    dat->calcParam[seq].seam_work_aspect = 1;
+    dat->renderParam[seq].seam_work_aspect = 1;
 
-    renderParam[seq].validBox = Rect(-1 ,-1, -1, -1);
+    dat->renderParam[seq].validBox = Rect(-1 ,-1, -1, -1);
 
-    calcParam[seq].cameras.clear();
-    calcParam[seq].indices.clear();
-    for(int i = 0; i < calcParam[seq].images.size(); i++) {
-        calcParam[seq].images[i].release();
+    dat->calcParam[seq].cameras.clear();
+    dat->calcParam[seq].indices.clear();
+    for(int i = 0; i < dat->calcParam[seq].images.size(); i++) {
+        dat->calcParam[seq].images[i].release();
     }
-    calcParam[seq].images.clear();
+    dat->calcParam[seq].images.clear();
 }
 
-void ResetParam(camDir_t seq)
+void ResetParam(stobj* dat, camDir_t seq)
 {
-    calcParam[seq].work_scale = 1;
-    calcParam[seq].seam_scale = 1;
-    calcParam[seq].compose_scale = 1;
-    calcParam[seq].seam_work_aspect = 1;
+    dat->calcParam[seq].work_scale = 1;
+    dat->calcParam[seq].seam_scale = 1;
+    dat->calcParam[seq].compose_scale = 1;
+    dat->calcParam[seq].seam_work_aspect = 1;
 
-    calcParam[seq].cameras.clear();
-    calcParam[seq].indices.clear();
-    for(int i = 0; i < calcParam[seq].images.size(); i++) {
-        calcParam[seq].images[i].release();
+    dat->calcParam[seq].cameras.clear();
+    dat->calcParam[seq].indices.clear();
+    for(int i = 0; i < dat->calcParam[seq].images.size(); i++) {
+        dat->calcParam[seq].images[i].release();
     }
-    calcParam[seq].images.clear();
+    dat->calcParam[seq].images.clear();
 }
 
-void UpdateParam(camDir_t seq)
+void UpdateParam(stobj* dat, camDir_t seq)
 {
-    for(int i = 0; i < renderParam[seq].images.size(); i++)
-        renderParam[seq].images[i].release();
+    for(int i = 0; i < dat->renderParam[seq].images.size(); i++)
+        dat->renderParam[seq].images[i].release();
 
-    renderParam[seq].updated = true;
-    renderParam[seq].work_scale = calcParam[seq].work_scale;
-    renderParam[seq].seam_scale = calcParam[seq].seam_scale;
-    renderParam[seq].compose_scale = calcParam[seq].compose_scale;
-    renderParam[seq].seam_work_aspect = calcParam[seq].seam_work_aspect;
-    renderParam[seq].warped_image_scale = calcParam[seq].warped_image_scale;
+    dat->renderParam[seq].updated = true;
+    dat->renderParam[seq].work_scale = dat->calcParam[seq].work_scale;
+    dat->renderParam[seq].seam_scale = dat->calcParam[seq].seam_scale;
+    dat->renderParam[seq].compose_scale = dat->calcParam[seq].compose_scale;
+    dat->renderParam[seq].seam_work_aspect = dat->calcParam[seq].seam_work_aspect;
+    dat->renderParam[seq].warped_image_scale = dat->calcParam[seq].warped_image_scale;
 
-    renderParam[seq].cameras.swap(calcParam[seq].cameras);
-    renderParam[seq].indices.swap(calcParam[seq].indices);
-    renderParam[seq].images.swap(calcParam[seq].images);
+    dat->renderParam[seq].cameras.swap(dat->calcParam[seq].cameras);
+    dat->renderParam[seq].indices.swap(dat->calcParam[seq].indices);
+    dat->renderParam[seq].images.swap(dat->calcParam[seq].images);
 }
 
-void DeallocAllParam(camDir_t seq)
+void DeallocAllParam(stobj* dat, camDir_t seq)
 {
-	for(int i = 0; i < renderParam[seq].images.size(); i++) {
-        renderParam[seq].images[i].release();
+	for(int i = 0; i < dat->renderParam[seq].images.size(); i++) {
+        dat->renderParam[seq].images[i].release();
 	}
-	for(int i = 0; i < calcParam[seq].images.size(); i++) {
-        calcParam[seq].images[i].release();
+	for(int i = 0; i < dat->calcParam[seq].images.size(); i++) {
+        dat->calcParam[seq].images[i].release();
     }
 
-	vector<Mat>().swap(calcParam[seq].images);
-	vector<CameraParams>().swap(calcParam[seq].cameras);
-	vector<int>().swap(calcParam[seq].indices);
+	vector<Mat>().swap(dat->calcParam[seq].images);
+	vector<CameraParams>().swap(dat->calcParam[seq].cameras);
+	vector<int>().swap(dat->calcParam[seq].indices);
 
-	vector<Mat>().swap(renderParam[seq].images);
-	vector<CameraParams>().swap(renderParam[seq].cameras);
-	vector<int>().swap(renderParam[seq].indices);
+	vector<Mat>().swap(dat->renderParam[seq].images);
+	vector<CameraParams>().swap(dat->renderParam[seq].cameras);
+	vector<int>().swap(dat->renderParam[seq].indices);
 }
 
 int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
@@ -138,11 +138,11 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
     }
 
     Mat full_img, img;
-    vector<ImageFeatures> features(calcParam[seq].num_images);
-    calcParam[seq].images.resize(calcParam[seq].num_images);
-    vector<Size> full_img_sizes(calcParam[seq].num_images);
+    vector<ImageFeatures> features(dat->calcParam[seq].num_images);
+    dat->calcParam[seq].images.resize(dat->calcParam[seq].num_images);
+    vector<Size> full_img_sizes(dat->calcParam[seq].num_images);
 
-    for (int i = 0; i < calcParam[seq].num_images; ++i)
+    for (int i = 0; i < dat->calcParam[seq].num_images; ++i)
     {
         if(srcImg[i].empty())
             continue;
@@ -159,33 +159,33 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
             return -1;
         }
 
-        if (work_megapix < 0)
+        if (dat->work_megapix < 0)
         {
             img = full_img;
-            calcParam[seq].work_scale = 1;
+            dat->calcParam[seq].work_scale = 1;
             is_work_scale_set = true;
         } else {
             if (!is_work_scale_set)
             {
-                calcParam[seq].work_scale = min(1.0, sqrt(work_megapix * 1e6 / full_img.size().area()));
+                dat->calcParam[seq].work_scale = min(1.0, sqrt(dat->work_megapix * 1e6 / full_img.size().area()));
                 is_work_scale_set = true;
             }
-            resize(full_img, img, Size(), calcParam[seq].work_scale, calcParam[seq].work_scale);
+            resize(full_img, img, Size(), dat->calcParam[seq].work_scale, dat->calcParam[seq].work_scale);
         }
 
         if (!is_seam_scale_set)
         {
-            calcParam[seq].seam_scale = min(1.0, sqrt(seam_megapix * 1e6 / full_img.size().area()));
-            calcParam[seq].seam_work_aspect = calcParam[seq].seam_scale / calcParam[seq].work_scale;
+            dat->calcParam[seq].seam_scale = min(1.0, sqrt(dat->seam_megapix * 1e6 / full_img.size().area()));
+            dat->calcParam[seq].seam_work_aspect = dat->calcParam[seq].seam_scale / dat->calcParam[seq].work_scale;
             is_seam_scale_set = true;
         }
 
         if(dat->applyROItoFeatureDetection) {
             Mat partImg;
             if(i == 0) {
-                partImg = img(cv::Rect(img.cols * (1.0 - ratioROI), 0, img.cols * ratioROI, img.rows));
+                partImg = img(cv::Rect(img.cols * (1.0 - dat->ratioROI), 0, img.cols * dat->ratioROI, img.rows));
             } else if(i == 1) {
-                partImg = img(cv::Rect(0, 0, img.cols * ratioROI, img.rows));
+                partImg = img(cv::Rect(0, 0, img.cols * dat->ratioROI, img.rows));
             }
 
             (*finder)(partImg, features[i]);
@@ -193,7 +193,7 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
 
             if(i == 0) {
                 for(int j = 0; j < features[i].keypoints.size(); j++) {
-                    features[i].keypoints[j].pt.x += img.cols * (1.0 - ratioROI);
+                    features[i].keypoints[j].pt.x += img.cols * (1.0 - dat->ratioROI);
                 }
             }
         } else {
@@ -203,8 +203,8 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
 
         LOGC("Features in image #" << i+1 << ": " << features[i].keypoints.size());
 
-        resize(full_img, img, Size(), calcParam[seq].seam_scale, calcParam[seq].seam_scale);
-        calcParam[seq].images[i] = img;
+        resize(full_img, img, Size(), dat->calcParam[seq].seam_scale, dat->calcParam[seq].seam_scale);
+        dat->calcParam[seq].images[i] = img;
     }
 
     finder->collectGarbage();
@@ -214,9 +214,9 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
     LOGC("[#] Finding features, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
 
     // If features are not detected enoughly, decide calculation fails.
-    for (int i = 0; i < calcParam[seq].num_images; ++i) {
-        if(features[i].keypoints.size() < feature_detect_threshold) {
-            ResetParam(seq);
+    for (int i = 0; i < dat->calcParam[seq].num_images; ++i) {
+        if(features[i].keypoints.size() < dat->feature_detect_threshold) {
+            ResetParam(dat, seq);
             return -1;
         }
     }
@@ -226,14 +226,14 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
     t = getTickCount();
 #endif
     vector<MatchesInfo> pairwise_matches;
-    BestOf2NearestMatcher matcher(try_cuda, match_conf);
+    BestOf2NearestMatcher matcher(dat->try_cuda, dat->match_conf);
     matcher(features, pairwise_matches);
     matcher.collectGarbage();
 
     // Prevent abnormal pairwise matching result. sometimes "pairwise matching count == all feature count" happens
     if(pairwise_matches[1].num_inliers < 6 || pairwise_matches[1].matches.size() >= features[0].keypoints.size() || pairwise_matches[1].matches.size() >= features[1].keypoints.size()) {
         LOGC("[ERR] Pairwise matching failed : abnormal matching output");
-        ResetParam(seq);
+        ResetParam(dat, seq);
         return -1;
     }
 
@@ -244,48 +244,48 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
         t = getTickCount();
 #endif
 
-    calcParam[seq].indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
+    dat->calcParam[seq].indices = leaveBiggestComponent(features, pairwise_matches, dat->conf_thresh);
 
     HomographyBasedEstimator estimator;
-    if (!estimator(features, pairwise_matches, calcParam[seq].cameras))
+    if (!estimator(features, pairwise_matches, dat->calcParam[seq].cameras))
     {
         cout << "[ERR] Homography estimation failed.\n";
-        ResetParam(seq);
+        ResetParam(dat, seq);
         return -1;
     }
 
-    for (size_t i = 0; i < calcParam[seq].cameras.size(); ++i)
+    for (size_t i = 0; i < dat->calcParam[seq].cameras.size(); ++i)
     {
         Mat R;
-        calcParam[seq].cameras[i].R.convertTo(R, CV_32F);
-        calcParam[seq].cameras[i].R = R;
-        LOGC("Initial intrinsics #" << calcParam[seq].indices[i]+1 << ":\n" << calcParam[seq].cameras[i].K());
+        dat->calcParam[seq].cameras[i].R.convertTo(R, CV_32F);
+        dat->calcParam[seq].cameras[i].R = R;
+        LOGC("Initial intrinsics #" << dat->calcParam[seq].indices[i]+1 << ":\n" << dat->calcParam[seq].cameras[i].K());
         R.release();
     }
 
     Ptr<detail::BundleAdjusterBase> adjuster;
-    if (ba_cost_func == "reproj") adjuster = makePtr<detail::BundleAdjusterReproj>();
-    else if (ba_cost_func == "ray") adjuster = makePtr<detail::BundleAdjusterRay>();
+    if (dat->ba_cost_func == "reproj") adjuster = makePtr<detail::BundleAdjusterReproj>();
+    else if (dat->ba_cost_func == "ray") adjuster = makePtr<detail::BundleAdjusterRay>();
     else
     {
-        cout << "[ERR] Unknown bundle adjustment cost function: '" << ba_cost_func << "'.\n";
-        ResetParam(seq);
+        cout << "[ERR] Unknown bundle adjustment cost function: '" << dat->ba_cost_func << "'.\n";
+        ResetParam(dat, seq);
         return -1;
     }
 
-    adjuster->setConfThresh(conf_thresh);
+    adjuster->setConfThresh(dat->conf_thresh);
     Mat_<uchar> refine_mask = Mat::zeros(3, 3, CV_8U);
-    if (ba_refine_mask[0] == 'x') refine_mask(0,0) = 1;
-    if (ba_refine_mask[1] == 'x') refine_mask(0,1) = 1;
-    if (ba_refine_mask[2] == 'x') refine_mask(0,2) = 1;
-    if (ba_refine_mask[3] == 'x') refine_mask(1,1) = 1;
-    if (ba_refine_mask[4] == 'x') refine_mask(1,2) = 1;
+    if (dat->ba_refine_mask[0] == 'x') refine_mask(0,0) = 1;
+    if (dat->ba_refine_mask[1] == 'x') refine_mask(0,1) = 1;
+    if (dat->ba_refine_mask[2] == 'x') refine_mask(0,2) = 1;
+    if (dat->ba_refine_mask[3] == 'x') refine_mask(1,1) = 1;
+    if (dat->ba_refine_mask[4] == 'x') refine_mask(1,2) = 1;
     adjuster->setRefinementMask(refine_mask);
-    if (!(*adjuster)(features, pairwise_matches, calcParam[seq].cameras))
+    if (!(*adjuster)(features, pairwise_matches, dat->calcParam[seq].cameras))
     {
         LOGC("[#] Bundle adjustment, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
         LOGC("[ERR] Camera parameters adjusting failed");
-        ResetParam(seq);
+        ResetParam(dat, seq);
         return -1;
     }
 
@@ -293,26 +293,26 @@ int CalcCameraParam(stobj* dat, camDir_t seq, Mat srcImg[])
 
     // Find median focal length
     vector<double> focals;
-    for (size_t i = 0; i < calcParam[seq].cameras.size(); ++i)
+    for (size_t i = 0; i < dat->calcParam[seq].cameras.size(); ++i)
     {
-        LOGC("Camera #" << calcParam[seq].indices[i]+1 << ":\n" << calcParam[seq].cameras[i].K());
-        focals.push_back(calcParam[seq].cameras[i].focal);
+        LOGC("Camera #" << dat->calcParam[seq].indices[i]+1 << ":\n" << dat->calcParam[seq].cameras[i].K());
+        focals.push_back(dat->calcParam[seq].cameras[i].focal);
     }
 
     sort(focals.begin(), focals.end());
     if (focals.size() % 2 == 1)
-        calcParam[seq].warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
+        dat->calcParam[seq].warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
     else
-        calcParam[seq].warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
+        dat->calcParam[seq].warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
 
-    if (do_wave_correct)
+    if (dat->do_wave_correct)
     {
         vector<Mat> rmats;
-        for (size_t i = 0; i < calcParam[seq].cameras.size(); ++i)
-            rmats.push_back(calcParam[seq].cameras[i].R.clone());
-        waveCorrect(rmats, wave_correct);
-        for (size_t i = 0; i < calcParam[seq].cameras.size(); ++i)
-            calcParam[seq].cameras[i].R = rmats[i];
+        for (size_t i = 0; i < dat->calcParam[seq].cameras.size(); ++i)
+            rmats.push_back(dat->calcParam[seq].cameras[i].R.clone());
+        waveCorrect(rmats, dat->wave_correct);
+        for (size_t i = 0; i < dat->calcParam[seq].cameras.size(); ++i)
+            dat->calcParam[seq].cameras[i].R = rmats[i];
     }
 
     LOGC("[#] Parameter Calculation Finished for sequence " << seq << ", total time: " << ((getTickCount() - app_start_time) / getTickFrequency()) << " sec" << endl);
@@ -331,16 +331,16 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
     int64 t = getTickCount();
 #endif
 
-    vector<Point> corners(renderParam[seq].num_images);
-    vector<UMat> masks_warped(renderParam[seq].num_images);
-    vector<UMat> images_warped(renderParam[seq].num_images);
-    vector<Size> sizes(renderParam[seq].num_images);
-    vector<UMat> masks(renderParam[seq].num_images);
+    vector<Point> corners(dat->renderParam[seq].num_images);
+    vector<UMat> masks_warped(dat->renderParam[seq].num_images);
+    vector<UMat> images_warped(dat->renderParam[seq].num_images);
+    vector<Size> sizes(dat->renderParam[seq].num_images);
+    vector<UMat> masks(dat->renderParam[seq].num_images);
 
     // Preapre images masks
-    for (int i = 0; i < renderParam[seq].num_images; ++i)
+    for (int i = 0; i < dat->renderParam[seq].num_images; ++i)
     {
-        masks[i].create(renderParam[seq].images[i].size(), CV_8U);
+        masks[i].create(dat->renderParam[seq].images[i].size(), CV_8U);
         masks[i].setTo(Scalar::all(255));
     }
 
@@ -348,41 +348,41 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
 
     Ptr<WarperCreator> warper_creator;
     {
-        if (warp_type == "plane")
+        if (dat->warp_type == "plane")
             warper_creator = makePtr<cv::PlaneWarper>();
-        else if (warp_type == "cylindrical")
+        else if (dat->warp_type == "cylindrical")
             warper_creator = makePtr<cv::CylindricalWarper>();
-        else if (warp_type == "spherical")
+        else if (dat->warp_type == "spherical")
             warper_creator = makePtr<cv::SphericalWarper>();
-        else if (warp_type == "fisheye")
+        else if (dat->warp_type == "fisheye")
             warper_creator = makePtr<cv::FisheyeWarper>();
-        else if (warp_type == "stereographic")
+        else if (dat->warp_type == "stereographic")
             warper_creator = makePtr<cv::StereographicWarper>();
-        else if (warp_type == "compressedPlaneA2B1")
+        else if (dat->warp_type == "compressedPlaneA2B1")
             warper_creator = makePtr<cv::CompressedRectilinearWarper>(2.0f, 1.0f);
-        else if (warp_type == "compressedPlaneA1.5B1")
+        else if (dat->warp_type == "compressedPlaneA1.5B1")
             warper_creator = makePtr<cv::CompressedRectilinearWarper>(1.5f, 1.0f);
-        else if (warp_type == "compressedPlanePortraitA2B1")
+        else if (dat->warp_type == "compressedPlanePortraitA2B1")
             warper_creator = makePtr<cv::CompressedRectilinearPortraitWarper>(2.0f, 1.0f);
-        else if (warp_type == "compressedPlanePortraitA1.5B1")
+        else if (dat->warp_type == "compressedPlanePortraitA1.5B1")
             warper_creator = makePtr<cv::CompressedRectilinearPortraitWarper>(1.5f, 1.0f);
-        else if (warp_type == "paniniA2B1")
+        else if (dat->warp_type == "paniniA2B1")
             warper_creator = makePtr<cv::PaniniWarper>(2.0f, 1.0f);
-        else if (warp_type == "paniniA1.5B1")
+        else if (dat->warp_type == "paniniA1.5B1")
             warper_creator = makePtr<cv::PaniniWarper>(1.5f, 1.0f);
-        else if (warp_type == "paniniPortraitA2B1")
+        else if (dat->warp_type == "paniniPortraitA2B1")
             warper_creator = makePtr<cv::PaniniPortraitWarper>(2.0f, 1.0f);
-        else if (warp_type == "paniniPortraitA1.5B1")
+        else if (dat->warp_type == "paniniPortraitA1.5B1")
             warper_creator = makePtr<cv::PaniniPortraitWarper>(1.5f, 1.0f);
-        else if (warp_type == "mercator")
+        else if (dat->warp_type == "mercator")
             warper_creator = makePtr<cv::MercatorWarper>();
-        else if (warp_type == "transverseMercator")
+        else if (dat->warp_type == "transverseMercator")
             warper_creator = makePtr<cv::TransverseMercatorWarper>();
     }
 
     if (!warper_creator)
     {
-        cout << "[ERR] Can't create the following warper '" << warp_type << "'\n";
+        cout << "[ERR] Can't create the following warper '" << dat->warp_type << "'\n";
         images_warped.clear();
         masks.clear();
         masks_warped.clear();
@@ -390,25 +390,25 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
         return 0;
     }
 
-    Ptr<RotationWarper> warper = warper_creator->create(static_cast<float>(renderParam[seq].warped_image_scale * renderParam[seq].seam_work_aspect));
+    Ptr<RotationWarper> warper = warper_creator->create(static_cast<float>(dat->renderParam[seq].warped_image_scale * dat->renderParam[seq].seam_work_aspect));
 
-    for (int i = 0; i < renderParam[seq].num_images; ++i)
+    for (int i = 0; i < dat->renderParam[seq].num_images; ++i)
     {
         Mat_<float> K;
-        renderParam[seq].cameras[i].K().convertTo(K, CV_32F);
-        float swa = (float)renderParam[seq].seam_work_aspect;
+        dat->renderParam[seq].cameras[i].K().convertTo(K, CV_32F);
+        float swa = (float)dat->renderParam[seq].seam_work_aspect;
         K(0,0) *= swa; K(0,2) *= swa;
         K(1,1) *= swa; K(1,2) *= swa;
 
-        corners[i] = warper->warp(renderParam[seq].images[i], K, renderParam[seq].cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
+        corners[i] = warper->warp(dat->renderParam[seq].images[i], K, dat->renderParam[seq].cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
         sizes[i] = images_warped[i].size();
 
-        warper->warp(masks[i], K, renderParam[seq].cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
+        warper->warp(masks[i], K, dat->renderParam[seq].cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
         K.release();
     }
 
-    vector<UMat> images_warped_f(renderParam[seq].num_images);
-    for (int i = 0; i < renderParam[seq].num_images; ++i)
+    vector<UMat> images_warped_f(dat->renderParam[seq].num_images);
+    for (int i = 0; i < dat->renderParam[seq].num_images; ++i)
         images_warped[i].convertTo(images_warped_f[i], CV_32F);
 
     LOGR("[#] Warping images, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
@@ -418,7 +418,7 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
     t = getTickCount();
 #endif
 
-    Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(expos_comp_type);
+    Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(dat->expos_comp_type);
     compensator->feed(corners, images_warped, masks_warped);
 
     LOGR("[#] Exposure compensation, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
@@ -429,25 +429,25 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
 #endif
 
     Ptr<SeamFinder> seam_finder;
-    if (seam_find_type == "no")
+    if (dat->seam_find_type == "no")
         seam_finder = makePtr<detail::NoSeamFinder>();
-    else if (seam_find_type == "voronoi")
+    else if (dat->seam_find_type == "voronoi")
         seam_finder = makePtr<detail::VoronoiSeamFinder>();
-    else if (seam_find_type == "gc_color")
+    else if (dat->seam_find_type == "gc_color")
     {
             seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR);
     }
-    else if (seam_find_type == "gc_colorgrad")
+    else if (dat->seam_find_type == "gc_colorgrad")
     {
             seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR_GRAD);
     }
-    else if (seam_find_type == "dp_color")
+    else if (dat->seam_find_type == "dp_color")
         seam_finder = makePtr<detail::DpSeamFinder>(DpSeamFinder::COLOR);
-    else if (seam_find_type == "dp_colorgrad")
+    else if (dat->seam_find_type == "dp_colorgrad")
         seam_finder = makePtr<detail::DpSeamFinder>(DpSeamFinder::COLOR_GRAD);
     if (!seam_finder)
     {
-        cout << "[ERR] Can't create the following seam finder '" << seam_find_type << "'\n";
+        cout << "[ERR] Can't create the following seam finder '" << dat->seam_find_type << "'\n";
         images_warped.clear();
         images_warped_f.clear();
         masks.clear();
@@ -476,79 +476,79 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
     //double compose_seam_aspect = 1;
     double compose_work_aspect = 1;
     bool is_compose_scale_set = false;
-    vector<Size> full_img_sizes(renderParam[seq].num_images);
+    vector<Size> full_img_sizes(dat->renderParam[seq].num_images);
     Mat full_img, img;
-    for (int i = 0; i < renderParam[seq].num_images; ++i)
+    for (int i = 0; i < dat->renderParam[seq].num_images; ++i)
         full_img_sizes[i] = srcImg[i].size();
 
-    for (int img_idx = 0; img_idx < renderParam[seq].num_images; ++img_idx)
+    for (int img_idx = 0; img_idx < dat->renderParam[seq].num_images; ++img_idx)
     {
-        LOGR("Compositing image #" << renderParam[seq].indices[img_idx]+1);
+        LOGR("Compositing image #" << dat->renderParam[seq].indices[img_idx]+1);
 
         // Read image and resize it if necessary
         full_img = srcImg[img_idx];
 
         if (!is_compose_scale_set)
         {
-            if (compose_megapix > 0)
-                renderParam[seq].compose_scale = min(1.0, sqrt(compose_megapix * 1e6 / full_img.size().area()));
+            if (dat->compose_megapix > 0)
+                dat->renderParam[seq].compose_scale = min(1.0, sqrt(dat->compose_megapix * 1e6 / full_img.size().area()));
             is_compose_scale_set = true;
 
             // Compute relative scales
             //compose_seam_aspect = compose_scale / seam_scale;
-            compose_work_aspect = renderParam[seq].compose_scale / renderParam[seq].work_scale;
+            compose_work_aspect = dat->renderParam[seq].compose_scale / dat->renderParam[seq].work_scale;
 
             // Update warped image scale
-            float temp_warped_image_scale = renderParam[seq].warped_image_scale * static_cast<float>(compose_work_aspect);
-            //renderParam[seq].warped_image_scale *= static_cast<float>(compose_work_aspect);
+            float temp_warped_image_scale = dat->renderParam[seq].warped_image_scale * static_cast<float>(compose_work_aspect);
+            //dat->renderParam[seq].warped_image_scale *= static_cast<float>(compose_work_aspect);
             warper = warper_creator->create(temp_warped_image_scale);
 
             // Update corners and sizes
-            for (int i = 0; i < renderParam[seq].num_images; ++i)
+            for (int i = 0; i < dat->renderParam[seq].num_images; ++i)
             {
                 // Update intrinsics
-                renderParam[seq].cameras[i].focal *= compose_work_aspect;
-                renderParam[seq].cameras[i].ppx *= compose_work_aspect;
-                renderParam[seq].cameras[i].ppy *= compose_work_aspect;
+                dat->renderParam[seq].cameras[i].focal *= compose_work_aspect;
+                dat->renderParam[seq].cameras[i].ppx *= compose_work_aspect;
+                dat->renderParam[seq].cameras[i].ppy *= compose_work_aspect;
 
                 // TEMP: 한번 focal, ppx, ppy를 셋업하고 난 후에는 캐쉬의 compose_scale과 work_scale을 1.0으로 셋업하여 중첩스케일링이 되지 않도록 한다
-                renderParam[seq].compose_scale = 1.0;
-                renderParam[seq].work_scale = 1.0;
+                dat->renderParam[seq].compose_scale = 1.0;
+                dat->renderParam[seq].work_scale = 1.0;
 
                 // Update corner and size
                 Size sz = full_img_sizes[i];
-                if (std::abs(renderParam[seq].compose_scale - 1) > 1e-1)
+                if (std::abs(dat->renderParam[seq].compose_scale - 1) > 1e-1)
                 {
-                    sz.width = cvRound(full_img_sizes[i].width * renderParam[seq].compose_scale);
-                    sz.height = cvRound(full_img_sizes[i].height * renderParam[seq].compose_scale);
+                    sz.width = cvRound(full_img_sizes[i].width * dat->renderParam[seq].compose_scale);
+                    sz.height = cvRound(full_img_sizes[i].height * dat->renderParam[seq].compose_scale);
                 }
 
                 Mat K;
-                renderParam[seq].cameras[i].K().convertTo(K, CV_32F);
-                Rect roi = warper->warpRoi(sz, K, renderParam[seq].cameras[i].R);
+                dat->renderParam[seq].cameras[i].K().convertTo(K, CV_32F);
+                Rect roi = warper->warpRoi(sz, K, dat->renderParam[seq].cameras[i].R);
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
 
                 K.release();
             }
         }
-        if (abs(renderParam[seq].compose_scale - 1) > 1e-1)
-            resize(full_img, img, Size(), renderParam[seq].compose_scale, renderParam[seq].compose_scale);
+        if (abs(dat->renderParam[seq].compose_scale - 1) > 1e-1)
+            resize(full_img, img, Size(), dat->renderParam[seq].compose_scale, dat->renderParam[seq].compose_scale);
         else
             img = full_img;
         full_img.release();
         Size img_size = img.size();
 
         Mat K;
-        renderParam[seq].cameras[img_idx].K().convertTo(K, CV_32F);
+        dat->renderParam[seq].cameras[img_idx].K().convertTo(K, CV_32F);
 
         // Warp the current image
-        warper->warp(img, K, renderParam[seq].cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+        warper->warp(img, K, dat->renderParam[seq].cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
 
         // Warp the current image mask
         mask.create(img_size, CV_8U);
         mask.setTo(Scalar::all(255));
-        warper->warp(mask, K, renderParam[seq].cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+        warper->warp(mask, K, dat->renderParam[seq].cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
 
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
@@ -565,18 +565,18 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
 
         if (!blender)
         {
-            blender = Blender::createDefault(blend_type, try_cuda);
+            blender = Blender::createDefault(dat->blend_type, dat->try_cuda);
             Size dst_sz = resultRoi(corners, sizes).size();
-            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * dat->blend_strength / 100.f;
             if (blend_width < 1.f)
-                blender = Blender::createDefault(Blender::NO, try_cuda);
-            else if (blend_type == Blender::MULTI_BAND)
+                blender = Blender::createDefault(Blender::NO, dat->try_cuda);
+            else if (dat->blend_type == Blender::MULTI_BAND)
             {
                 MultiBandBlender* mb = dynamic_cast<MultiBandBlender*>(blender.get());
                 mb->setNumBands(static_cast<int>(ceil(log(blend_width)/log(2.)) - 1.));
                 LOGR("Multi-band blender, number of bands: " << mb->numBands());
             }
-            else if (blend_type == Blender::FEATHER)
+            else if (dat->blend_type == Blender::FEATHER)
             {
                 FeatherBlender* fb = dynamic_cast<FeatherBlender*>(blender.get());
                 fb->setSharpness(1.f/blend_width);
@@ -613,10 +613,10 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
 	}
 
 	if(!result.empty()) {
-		if(doCrop) {
+		if(dat->doCrop) {
 			Mat viewport;
 			result.convertTo(result, CV_8UC3);
-			if(crop2InsideBox(seq, result, viewport)) {
+			if(crop2InsideBox(dat, seq, result, viewport)) {
 				resize(viewport, viewport, cv::Size(dat->OutWidth, dat->OutHeight/2), 0, 0, CV_INTER_LINEAR);
 				viewport.copyTo(destImg(cv::Rect(ptImgL, Size(viewport.cols, viewport.rows))));
 				//rectangle(gray, box, rectColor(255, 0, 0), 2);
@@ -648,10 +648,9 @@ int Render(stobj* dat, camDir_t seq, Mat srcImg[], Mat destImg)
     return 1;
 }
 
-bool crop2InsideBox(int seq, Mat& src, Mat& dst) {
-	if(renderParam[seq].updated) {
-		renderParam[seq].updated = false;
-
+bool crop2InsideBox(stobj* dat, int seq, Mat& src, Mat& dst) {
+	if(dat->renderParam[seq].updated) {
+		dat->renderParam[seq].updated = false;
 		Mat gray, binary;
 		cvtColor(src, gray, CV_BGR2GRAY);
 
@@ -682,30 +681,30 @@ bool crop2InsideBox(int seq, Mat& src, Mat& dst) {
 			drawContours(maskSingleContour, contours, ctrIdx, Scalar(255), CV_FILLED);
 
 			// Find minimum rect for each blob
-			renderParam[seq].validBox = findMinRect1b(~maskSingleContour);
+			dat->renderParam[seq].validBox = findMinRect1b(dat, ~maskSingleContour);
 
-			dst = src(Rect(renderParam[seq].validBox.x, renderParam[seq].validBox.y, renderParam[seq].validBox.width, renderParam[seq].validBox.height));
-		} else if(renderParam[seq].validBox.x >= 0 && renderParam[seq].validBox.x < src.cols && renderParam[seq].validBox.y >= 0 && renderParam[seq].validBox.y < src.rows) {
+			dst = src(Rect(dat->renderParam[seq].validBox.x, dat->renderParam[seq].validBox.y, dat->renderParam[seq].validBox.width, dat->renderParam[seq].validBox.height));
+		} else if(dat->renderParam[seq].validBox.x >= 0 && dat->renderParam[seq].validBox.x < src.cols && dat->renderParam[seq].validBox.y >= 0 && dat->renderParam[seq].validBox.y < src.rows) {
 		    //If fail to find unique contour, then use previous size.
 		    //If previous box is larger than current src image, limits to current src image size.
 		    //FIXME: Is there more intelligent way to adjust crop size?
-			renderParam[seq].validBox.width = ((renderParam[seq].validBox.width + renderParam[seq].validBox.x) < src.cols) ? renderParam[seq].validBox.width : (src.cols - renderParam[seq].validBox.x);
-			renderParam[seq].validBox.height = ((renderParam[seq].validBox.height + renderParam[seq].validBox.y) < src.rows) ? renderParam[seq].validBox.height : (src.rows - renderParam[seq].validBox.y);
+			dat->renderParam[seq].validBox.width = ((dat->renderParam[seq].validBox.width + dat->renderParam[seq].validBox.x) < src.cols) ? dat->renderParam[seq].validBox.width : (src.cols - dat->renderParam[seq].validBox.x);
+			dat->renderParam[seq].validBox.height = ((dat->renderParam[seq].validBox.height + dat->renderParam[seq].validBox.y) < src.rows) ? dat->renderParam[seq].validBox.height : (src.rows - dat->renderParam[seq].validBox.y);
 
-			dst = src(Rect(renderParam[seq].validBox.x, renderParam[seq].validBox.y, renderParam[seq].validBox.width, renderParam[seq].validBox.height));
+			dst = src(Rect(dat->renderParam[seq].validBox.x, dat->renderParam[seq].validBox.y, dat->renderParam[seq].validBox.width, dat->renderParam[seq].validBox.height));
 		} else {
-			renderParam[seq].validBox.x = -1;
-			renderParam[seq].validBox.y = -1;
-			renderParam[seq].validBox.width = -1;
-			renderParam[seq].validBox.height = -1;
+			dat->renderParam[seq].validBox.x = -1;
+			dat->renderParam[seq].validBox.y = -1;
+			dat->renderParam[seq].validBox.width = -1;
+			dat->renderParam[seq].validBox.height = -1;
 
 			return false;
 		}
 
 		return true;
 	} else {
-		if(renderParam[seq].validBox.width != -1 && renderParam[seq].validBox.height != -1) {
-			dst = src(Rect(renderParam[seq].validBox.x, renderParam[seq].validBox.y, renderParam[seq].validBox.width, renderParam[seq].validBox.height));
+		if(dat->renderParam[seq].validBox.width != -1 && dat->renderParam[seq].validBox.height != -1) {
+			dst = src(Rect(dat->renderParam[seq].validBox.x, dat->renderParam[seq].validBox.y, dat->renderParam[seq].validBox.width, dat->renderParam[seq].validBox.height));
 			return true;
 		}
 		else
@@ -715,7 +714,7 @@ bool crop2InsideBox(int seq, Mat& src, Mat& dst) {
 
 // https://stackoverflow.com/questions/34896431/creating-rectangle-within-a-blob-using-opencv
 // https://stackoverflow.com/a/30418912/5008845
-Rect findMinRect1b(const Mat1b& src)
+Rect findMinRect1b(stobj* dat, const Mat1b& src)
 {
     Mat1f W(src.rows, src.cols, float(0));
     Mat1f H(src.rows, src.cols, float(0));
@@ -723,8 +722,8 @@ Rect findMinRect1b(const Mat1b& src)
     Rect maxRect(0, 0, 0, 0);
     float maxArea = 0.f;
 
-    register short search_start = (short)((int)src.cols * (float)rect_search_start);
-    register short search_end = (short)((int)src.cols * (float)rect_search_end);
+    register short search_start = (short)((int)src.cols * (float)dat->rect_search_start);
+    register short search_end = (short)((int)src.cols * (float)dat->rect_search_end);
 
     for (int r = 0; r < src.rows; ++r)
     {
@@ -756,17 +755,17 @@ Rect findMinRect1b(const Mat1b& src)
     return maxRect;
 }
 
-bool isCameraParamValid(camDir_t seq)
+bool isCameraParamValid(stobj* dat, camDir_t seq)
 {
     return true; 
 
-    for(int a = 0; a < calcParam[seq].cameras.size(); a++){
-        if(countNonZero(calcParam[seq].cameras[a].R != Mat::eye(3 , 3, CV_32F)) == 0) {
+    for(int a = 0; a < dat->calcParam[seq].cameras.size(); a++){
+        if(countNonZero(dat->calcParam[seq].cameras[a].R != Mat::eye(3 , 3, CV_32F)) == 0) {
             return false;
         }
 
         for(int i = 0; i < 9; i += 4) {
-            if(calcParam[seq].cameras[a].R.at<float>(i) <= filter_conf) {
+            if(dat->calcParam[seq].cameras[a].R.at<float>(i) <= dat->filter_conf) {
                 return false;
             }
         }

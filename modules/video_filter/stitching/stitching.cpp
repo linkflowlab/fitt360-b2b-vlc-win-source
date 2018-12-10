@@ -121,7 +121,7 @@ void BindStreamStitcherInputBuf(stobj* dat)
 
 void PrivThreads::_CalcFrontThread(stobj* dat)
 {
-    InitParam(FRONT, 2);
+    InitParam(dat, FRONT, 2);
     while(true) {
         if(dat->bSigStop) {
             cout << "CalcFrontThread exit" << endl;
@@ -142,9 +142,9 @@ void PrivThreads::_CalcFrontThread(stobj* dat)
         int ret = CalcCameraParam(dat, FRONT, input);
         left.release();
         right.release();
-        if(ret != -1 && isCameraParamValid(FRONT)) {
+        if(ret != -1 && isCameraParamValid(dat, FRONT)) {
             dat->mtxFrontDraw.lock();
-            UpdateParam(FRONT);
+            UpdateParam(dat, FRONT);
             dat->mtxFrontDraw.unlock();
             dat->isParamAvailable[FRONT] = true;
 
@@ -158,7 +158,7 @@ void PrivThreads::_CalcFrontThread(stobj* dat)
 
 void PrivThreads::_CalcRearThread(stobj* dat)
 {
-    InitParam(REAR, 2);
+    InitParam(dat, REAR, 2);
     while(true) {
         if(dat->bSigStop) {
             cout << "CalcRearThread exit" << endl;
@@ -179,9 +179,9 @@ void PrivThreads::_CalcRearThread(stobj* dat)
         int ret = CalcCameraParam(dat, REAR, input);
         left.release();
         right.release();
-        if(ret != -1 && isCameraParamValid(REAR)) {
+        if(ret != -1 && isCameraParamValid(dat, REAR)) {
             dat->mtxRearDraw.lock();
-            UpdateParam(REAR);
+            UpdateParam(dat, REAR);
             dat->mtxRearDraw.unlock();
             dat->isParamAvailable[REAR] = true;
 
@@ -306,8 +306,8 @@ static void Destroy( vlc_object_t *p_this )
     if(dat->bFaceDetect && dat->faceDetectThread.joinable())
         dat->faceDetectThread.join();
 
-    DeallocAllParam(FRONT);
-    DeallocAllParam(REAR);
+    DeallocAllParam(dat, FRONT);
+    DeallocAllParam(dat, REAR);
 
     if (p_sys->p_image_handle) {
         image_HandlerDelete( p_sys->p_image_handle );
