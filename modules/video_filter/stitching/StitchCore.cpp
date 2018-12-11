@@ -646,8 +646,6 @@ int Render(camDir_t seq, Mat srcImg[], Mat destImg)
     result.release();
     result_mask.release();
 
-    renderParam[seq].updated = false;
-
 	LOGR("[#] Warping Finished for sequence " << seq << ", total time: " << ((getTickCount() - app_start_time) / getTickFrequency()) << " sec" << endl);
 
     return 1;
@@ -655,6 +653,8 @@ int Render(camDir_t seq, Mat srcImg[], Mat destImg)
 
 bool crop2InsideBox(int seq, Mat& src, Mat& dst) {
 	if(renderParam[seq].updated) {
+		renderParam[seq].updated = false;
+
 		Mat gray, binary;
 		cvtColor(src, gray, CV_BGR2GRAY);
 
@@ -668,10 +668,21 @@ bool crop2InsideBox(int seq, Mat& src, Mat& dst) {
 		//findContours(binary, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
 		//for (int i = 0; i < contours.size(); ++i)
-		if(contours.size() == 1) {
+		if(contours.size() >= 0) {
+			// Find largest contour
+			int ctrIdx = 0;
+			int ctrArea = 0;
+			for(int i = 0; i < contours.size(); i++) {
+				double area = contourArea(contours[i], false);
+				if(area > ctrArea) {
+					ctrArea = area;
+					ctrIdx = i;
+				}
+			}
+
 			// Create a mask for each single blob
 			Mat1b maskSingleContour(gray.rows, gray.cols, uchar(0));
-			drawContours(maskSingleContour, contours, 0, Scalar(255), CV_FILLED);
+			drawContours(maskSingleContour, contours, ctrIdx, Scalar(255), CV_FILLED);
 
 			// Find minimum rect for each blob
 			renderParam[seq].validBox = findMinRect1b(~maskSingleContour);
