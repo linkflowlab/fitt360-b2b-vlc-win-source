@@ -22,4 +22,7 @@
 
 #include "vout_wrapper.h"
 
+/* FIXME should not be there */
+void vout_SendDisplayEventMouse(vout_thread_t *, const vlc_mouse_t *);
+
 void vout_UpdateDisplaySourceProperties(vout_display_t *vd, const video_format_t *);
