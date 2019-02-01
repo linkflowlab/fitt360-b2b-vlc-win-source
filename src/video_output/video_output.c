@@ -1341,12 +1341,12 @@ static void ThreadCustomTranslateMouseState(vout_thread_t *vout,
                                       const vlc_mouse_t *win_mouse)
 {
     msg_Dbg(vout, "Execute ThreadCustomTranslateMouseState\n");
-    vout_display_t *vd = vout->p->display.vd;
+    vout_display_t *vd = vout->p->display;
     vlc_mouse_t vid_mouse;
     vout_display_place_t place;
 
     /* Translate window coordinates to video coordinates */
-    vout_display_PlacePicture(&place, &vd->source, vd->cfg, false);
+    vout_display_PlacePicture(&place, &vd->source, vd->cfg);
     if (place.width <= 0 || place.height <= 0)
         return;
 
