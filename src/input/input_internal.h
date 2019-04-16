@@ -134,6 +134,9 @@ typedef struct input_thread_private_t
     vlc_tick_t  i_audio_delay;
     vlc_tick_t  i_spu_delay;
 
+    /* Delays */
+    bool        b_low_delay;
+
     /* Output */
     bool            b_out_pace_control; /* XXX Move it ot es_sout ? */
     sout_instance_t *p_sout;            /* Idem ? */
