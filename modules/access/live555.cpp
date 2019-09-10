@@ -665,8 +665,10 @@ describe:
         int i_code = p_sys->i_live555_ret;
         if( i_code == 401 )
         {
-            msg_Dbg( p_demux, "authentication failed" );
+            msg_Dbg( p_demux, "authentication failed. do not retry." );
 
+	    // do not re-try with stored password. issue #272
+            /*
             if( vlc_credential_get( &credential, p_demux, "rtsp-user", "rtsp-pwd",
                                     _("RTSP authentication"),
                                     _("Please enter a valid login name and a password.") ) )
@@ -676,6 +678,7 @@ describe:
                 msg_Dbg( p_demux, "retrying with user=%s", psz_user );
                 goto describe;
             }
+	    */
         }
         else if( i_code > 0 && i_code != 404 && !var_GetBool( p_demux, "rtsp-http" ) )
         {
