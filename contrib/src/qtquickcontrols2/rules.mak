@@ -1,7 +1,7 @@
 # QtQuickControls 2
 
 QTQC2_VERSION := 5.11.0
-QTQC2_URL := http://download.qt.io/official_releases/qt/5.11/$(QTQC2_VERSION)/submodules/qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz
+QTQC2_URL := http://qt.mirror.constant.com/archive/qt/5.11/$(QTQC2_VERSION)/submodules/qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz
 
 ifdef HAVE_WIN32
 PKGS += qtquickcontrols2

@@ -1,7 +1,7 @@
 # QtGraphicalEffects
 
 QTGE_VERSION := 5.11.0
-QTGE_URL := http://download.qt.io/official_releases/qt/5.11/$(QTGE_VERSION)/submodules/qtgraphicaleffects-everywhere-src-$(QTGE_VERSION).tar.xz
+QTGE_URL := http://qt.mirror.constant.com/archive/qt/5.11/$(QTGE_VERSION)/submodules/qtgraphicaleffects-everywhere-src-$(QTGE_VERSION).tar.xz
 
 DEPS_qtgraphicaleffects += qtdeclarative $(DEPS_qtdeclarative)
 

@@ -1,7 +1,7 @@
 # Qt
 
 QT_VERSION := 5.11.0
-QT_URL := https://download.qt.io/official_releases/qt/5.11/$(QT_VERSION)/submodules/qtbase-everywhere-src-$(QT_VERSION).tar.xz
+QT_URL := http://qt.mirror.constant.com/archive/qt/5.11/$(QT_VERSION)/submodules/qtbase-everywhere-src-$(QT_VERSION).tar.xz
 
 ifdef HAVE_MACOSX
 #PKGS += qt
