@@ -22,4 +22,12 @@
 
 #include "vout_wrapper.h"
 
+vout_display_t *vout_NewSplitter(vout_thread_t *vout,
+                                 const video_format_t *source,
+                                 const vout_display_cfg_t *cfg,
+                                 const char *module,
+                                 const char *splitter_module);
+
+/* FIXME should not be there */
+void vout_SendDisplayEventMouse(vout_thread_t *, const vlc_mouse_t *);
 void vout_UpdateDisplaySourceProperties(vout_display_t *vd, const video_format_t *);
