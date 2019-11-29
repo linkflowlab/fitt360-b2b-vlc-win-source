@@ -7,13 +7,16 @@ fetch-npapi:
 	rm -f -- stamp-npapi.tmp
 	if test -d npapi-vlc; then \
 		cd npapi-vlc && \
-		git fetch origin && \
-		git reset --hard origin/master; \
-		git submodule update; \
+                git fetch origin; \
+                cd vlcpp && \
+                git fetch origin ; \	
 	else \
 		git clone https://code.videolan.org/videolan/npapi-vlc.git npapi-vlc && \
 		cd npapi-vlc && \
-		git submodule update --init; \
+                git submodule update --init && \
+                git checkout bf6a206b065acea776c3e1d346333cdd65211a99 -b lf ; \
+                cd vlcpp && \
+                git checkout d1b6a9019d2b4d6779280f4673401014949353f3 -b lf ; \
 	fi
 	git --git-dir=npapi-vlc/.git describe --long --always > stamp-npapi.tmp
 	if diff stamp-npapi.tmp stamp-npapi >/dev/null 2>&1; then \
