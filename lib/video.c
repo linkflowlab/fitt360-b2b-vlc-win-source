@@ -1243,25 +1243,25 @@ void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned t
             const vout_window_mouse_event_t mouse = {
                 VOUT_WINDOW_MOUSE_PRESSED_CUSTOM, x, y, btn
             };
-            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+            //vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
         } else if(type == 1) {
             // Released
             const vout_window_mouse_event_t mouse = {
                 VOUT_WINDOW_MOUSE_RELEASED_CUSTOM, x, y, btn
             };
-            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+            //vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
         } else if(type == 2) {
             // Moved
             const vout_window_mouse_event_t mouse = {
                 VOUT_WINDOW_MOUSE_MOVED_CUSTOM, x, y, 0
             };
-            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+            //vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
         } else if(type == 3) {
             //Double clicked
             const vout_window_mouse_event_t mouse = {
                 VOUT_WINDOW_MOUSE_DOUBLE_CLICK_CUSTOM, x, y, btn
             };
-            vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
+            //vout_window_SendMouseEvent(((vout_thread_sys_t*)pp_vouts[VoutID]->p)->window, &mouse);
         } else {
             libvlc_printerr ("libvlc_send_mouse_event::Invalid event type");
         }

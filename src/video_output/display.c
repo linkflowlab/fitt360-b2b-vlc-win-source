@@ -876,6 +876,6 @@ void vout_SendDisplayEventMouse(vout_thread_t *vout, const vlc_mouse_t *m)
         var_ToggleBool(vout, "fullscreen");
     vout->p->mouse = *m;
 
-    if (vout->p->mouse_event)
-        vout->p->mouse_event(m, vout->p->opaque);
+ //   if (vout->p->mouse_event)
+//        vout->p->mouse_event(m, vout->p->opaque);
 }

@@ -103,9 +103,9 @@ static inline int GetPackedRgbIndexes( const video_format_t *p_fmt, int *i_r_ind
     *i_g_index = ( i_mask_bits - p_fmt->i_lgshift ) / 8;
     *i_b_index = ( i_mask_bits - p_fmt->i_lbshift ) / 8;
 #else
-    *i_r_index = p_fmt->i_lrshift / 8;
-    *i_g_index = p_fmt->i_lgshift / 8;
-    *i_b_index = p_fmt->i_lbshift / 8;
+//    *i_r_index = p_fmt->i_lrshift / 8;
+//    *i_g_index = p_fmt->i_lgshift / 8;
+//    *i_b_index = p_fmt->i_lbshift / 8;
 #endif
     return VLC_SUCCESS;
 }
