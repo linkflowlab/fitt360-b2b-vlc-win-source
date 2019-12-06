@@ -877,5 +877,5 @@ void vout_SendDisplayEventMouse(vout_thread_t *vout, const vlc_mouse_t *m)
     vout->p->mouse = *m;
 
     if (vout->p->mouse_event)
-        vout->p->mouse_event(m, vout->p->opaque);
+        vout->p->mouse_event(m, vout->p->mouse_opaque);
 }
