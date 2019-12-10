@@ -301,8 +301,6 @@ void vout_IntfInit( vout_thread_t *p_vout )
 
     /* Transform (for controlling LF video layout independently)*/
     var_Create( p_vout, "transform-type", VLC_VAR_STRING | VLC_VAR_DOINHERIT );
-
-    vout_IntfReinit( p_vout );
 }
 
 void vout_IntfReinit( vout_thread_t *p_vout )
