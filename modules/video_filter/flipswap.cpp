@@ -78,9 +78,15 @@ void FrameRender(filter_t* ptrFilter, Mat& frame)
     flip(lowerleft, lowerleft, 1);
     flip(lowerright, lowerright, 1);
 
-    Mat tmp = lowerright.clone();
-    lowerleft.copyTo(frame(Rect(frame.cols/2, frame.rows/2, frame.cols/2, frame.rows/2)));
-    tmp.copyTo(frame(Rect(0, frame.rows/2, frame.cols/2, frame.rows/2)));
+	// Swap
+    //Mat tmp = lowerright.clone();
+    //lowerleft.copyTo(frame(Rect(frame.cols/2, frame.rows/2, frame.cols/2, frame.rows/2)));
+    //tmp.copyTo(frame(Rect(0, frame.rows/2, frame.cols/2, frame.rows/2)));
+
+	// Not Swap
+	Mat tmp = lowerright.clone();
+	lowerleft.copyTo(frame(Rect(0, frame.rows/2, frame.cols/2, frame.rows/2)));
+	tmp.copyTo(frame(Rect(frame.cols/2, frame.rows/2, frame.cols/2, frame.rows/2)));
 }
 
 static int Create( vlc_object_t *p_this )
