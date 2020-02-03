@@ -196,7 +196,13 @@ void FrameRender()
         Render(FRONT, input, RTSPframe_result);
         mtxFrontDraw.unlock();
     } else {
-        RTSPframe(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2)).copyTo(RTSPframe_result(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2)));
+        Mat resized;
+        if(RTSPframe.cols != RTSPframe_result.cols || RTSPframe.rows != RTSPframe_result.rows) {
+            resize(RTSPframe(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2)), resized, Size(RTSPframe_result.cols, RTSPframe_result.rows/2), INTER_LINEAR);
+        } else {
+            resized = RTSPframe(Rect(0, 0, RTSPframe.cols, RTSPframe.rows/2));
+        }
+        resized.copyTo(RTSPframe_result(Rect(0, 0, RTSPframe_result.cols, RTSPframe_result.rows/2)));
     }
 
     if(isParamAvailable[REAR]) {
@@ -205,7 +211,13 @@ void FrameRender()
         Render(REAR, input, RTSPframe_result);
         mtxRearDraw.unlock();
     } else {
-        RTSPframe(Rect(0, OutHeight/2, RTSPframe.cols, RTSPframe.rows/2)).copyTo(RTSPframe_result(Rect(0, OutHeight/2, RTSPframe.cols, RTSPframe.rows/2)));
+        Mat resized;
+        if(RTSPframe.cols != RTSPframe_result.cols || RTSPframe.rows != RTSPframe_result.rows) {
+            resize(RTSPframe(Rect(0, RTSPframe.rows/2, RTSPframe.cols, RTSPframe.rows/2)), resized, Size(RTSPframe_result.cols, RTSPframe_result.rows/2), INTER_LINEAR);
+        } else {
+            resized = RTSPframe(Rect(0, RTSPframe.rows/2, RTSPframe.cols, RTSPframe.rows/2));
+        }
+        resized.copyTo(RTSPframe_result(Rect(0, RTSPframe_result.rows/2, RTSPframe_result.cols, RTSPframe_result.rows/2)));
     }
 
     if(bFaceDetect) {
