@@ -390,7 +390,9 @@ bool video_format_IsSimilar( const video_format_t *f1,
     if( f1->i_width != f2->i_width || f1->i_height != f2->i_height ||
         f1->i_visible_width != f2->i_visible_width ||
         f1->i_visible_height != f2->i_visible_height ||
-        f1->i_x_offset != f2->i_x_offset || f1->i_y_offset != f2->i_y_offset )
+        f1->i_x_offset != f2->i_x_offset || f1->i_y_offset != f2->i_y_offset ||
+	f1->i_frame_rate != f2->i_frame_rate )
+
         return false;
     if( (int64_t)f1->i_sar_num * f2->i_sar_den !=
         (int64_t)f2->i_sar_num * f1->i_sar_den )
