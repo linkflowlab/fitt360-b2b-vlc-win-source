@@ -56,6 +56,8 @@ int vout_OpenWrapper(vout_thread_t *vout,
     /* */
     char *modlist = var_InheritString(vout, "vout");
 
+    msg_Info(vout, "selected vout module: %s", modlist);
+
     if (splitter_name)
         sys->display.vd = vout_NewSplitter(vout, &vout->p->original, state, modlist, splitter_name);
     else

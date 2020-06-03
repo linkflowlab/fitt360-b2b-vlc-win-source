@@ -120,6 +120,7 @@ static_assert(
 static_assert(
     PROJECTION_MODE_RECTANGULAR             == (int) libvlc_video_projection_rectangular &&
     PROJECTION_MODE_EQUIRECTANGULAR         == (int) libvlc_video_projection_equirectangular &&
+    PROJECTION_MODE_STITCHING               == (int) libvlc_video_projection_stitching &&
     PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD == (int) libvlc_video_projection_cubemap_layout_standard,
     "Mismatch between libvlc_video_projection_t and video_projection_mode_t" );
 
@@ -979,7 +980,7 @@ libvlc_media_tracks_get( libvlc_media_t *p_md, libvlc_media_track_t *** pp_es )
             p_mes->video->i_orientation = (int) p_es->video.orientation;
 
             assert( ( p_es->video.projection_mode >= PROJECTION_MODE_RECTANGULAR &&
-                    p_es->video.projection_mode <= PROJECTION_MODE_EQUIRECTANGULAR ) ||
+                    p_es->video.projection_mode <= PROJECTION_MODE_STITCHING ) ||
                     ( p_es->video.projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD ) );
             p_mes->video->i_projection = (int) p_es->video.projection_mode;
 
