@@ -1799,3 +1799,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     return VLC_SUCCESS;
 }
 
+int vout_display_opengl_SetProjection(vout_display_opengl_t *vgl, video_projection_mode_t type) {
+	vgl->fmt.projection_mode = type;
+}
+

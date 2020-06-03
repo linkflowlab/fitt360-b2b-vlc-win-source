@@ -99,6 +99,8 @@ vlc_module_begin ()
     add_loadfile("direct3d9-shader-file", NULL,
                  PIXEL_SHADER_FILE_TEXT, PIXEL_SHADER_FILE_LONGTEXT)
 
+	//Set lower score than glwin32
+	//set_capability("vout display", 270)
     set_capability("vout display", 280)
     add_shortcut("direct3d9", "direct3d")
     set_callbacks(Open, Close)
@@ -247,6 +249,7 @@ static int Open(vlc_object_t *object)
     vout_display_t *vd = (vout_display_t *)object;
     vout_display_sys_t *sys;
 
+	// AIDEN: 여기서 에러를 뱉어서, 다른 모듈(glwin32)가 360을 핸들링 하도록 넘겨줘버린다
     if ( !vd->obj.force && vd->source.projection_mode != PROJECTION_MODE_RECTANGULAR)
         return VLC_EGENERIC; /* let a module who can handle it do it */
 

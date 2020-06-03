@@ -1317,7 +1317,8 @@ void libvlc_media_player_set_hwnd( libvlc_media_player_t *p_mi,
     assert (p_mi != NULL);
 #if defined (_WIN32) || defined (__OS2__)
     var_SetString (p_mi, "avcodec-hw", "");
-    var_SetString (p_mi, "vout", "");
+	//AIDEN: remove override vout varable to preserve command line vout setting
+    //var_SetString (p_mi, "vout", "");
     var_SetString (p_mi, "window",
                    (drawable != NULL) ? "embed-hwnd,any" : "");
     var_SetInteger (p_mi, "drawable-hwnd", (uintptr_t)drawable);
