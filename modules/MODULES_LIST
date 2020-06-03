@@ -159,6 +159,7 @@ $Id$
  * gaussianblur: gaussian blur video filter
  * gestures: mouse gestures control plugin
  * gl: OpenGL video output using the generic OpenGL provider
+ * mygl: OpenGL video output using the generic OpenGL provider for test
  * glconv_android: Android SurfaceTexture OpenGL hardware converter
  * glconv_cvpx: Apple CVPX OpenGL hardware converter (for iOS and macOS)
  * glconv_vaapi_drm: VA-API OpenGL hardware converter for DRM
@@ -168,6 +169,7 @@ $Id$
  * gles2: OpenGL ES2 video output using the generic OpenGL provider
  * glspectrum: 3D OpenGL spectrum visualization
  * glwin32: a opengl provider using DirectX OpenGL
+ * glwin32_stitch: a opengl provider using DirectX OpenGL with stitching
  * glx: GLX extension for OpenGL
  * gme: old console games music playback using Game Music Emu
  * gnutls: GNU TLS encryption/decryption module

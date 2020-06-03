@@ -69,9 +69,17 @@ vout_LTLIBRARIES += $(LTLIBgles2)
 libgl_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) video_output/opengl/display.c
 libgl_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS) $(OPENGL_COMMONCLFAGS)
 libgl_plugin_la_LIBADD = $(LIBM) $(OPENGL_COMMONLIBS)
+
+libmygl_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) video_output/opengl/display_mygl.c
+libmygl_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS) $(OPENGL_COMMONCLFAGS)
+libmygl_plugin_la_LIBADD = $(LIBM) $(OPENGL_COMMONLIBS)
+
 if HAVE_WIN32
 libgl_plugin_la_CFLAGS += -DHAVE_GL_CORE_SYMBOLS
 libgl_plugin_la_LIBADD += $(GL_LIBS)
+
+libmygl_plugin_la_CFLAGS += -DHAVE_GL_CORE_SYMBOLS
+libmygl_plugin_la_LIBADD += $(GL_LIBS)
 endif
 
 libglconv_vaapi_wl_plugin_la_SOURCES = video_output/opengl/converter_vaapi.c \
@@ -98,6 +106,7 @@ libglconv_vdpau_plugin_la_LIBADD = $(LIBDL) libvlc_vdpau.la $(X_LIBS) $(X_PRE_LI
 
 if HAVE_GL
 vout_LTLIBRARIES += libgl_plugin.la
+vout_LTLIBRARIES += libmygl_plugin.la
 if HAVE_EGL
 if HAVE_VAAPI
 if HAVE_WAYLAND
@@ -324,23 +333,35 @@ libglwin32_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) \
 	video_output/win32/events.c video_output/win32/events.h \
 	video_output/win32/sensors.cpp \
 	video_output/win32/win32touch.c video_output/win32/win32touch.h
+libglwin32_stitch_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) \
+    video_output/win32/glwin32_stitch.c \
+    video_output/win32/common.c video_output/win32/common.h \
+    video_output/win32/events.c video_output/win32/events.h \
+    video_output/win32/sensors.cpp \
+	video_output/win32/win32touch.c video_output/win32/win32touch.h
 libwgl_plugin_la_SOURCES = video_output/win32/wgl.c $(OPENGL_COMMONSOURCES)
 
 libglwin32_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DMODULE_NAME_IS_glwin32
 
+libglwin32_stitch_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
+	-DMODULE_NAME_IS_glwin32_stitch
+
 libglwin32_plugin_la_LIBADD = libchroma_copy.la -lopengl32 -lgdi32 $(LIBCOM) -luuid $(OPENGL_COMMONLIBS)
+libglwin32_stitch_plugin_la_LIBADD = libchroma_copy.la -lopengl32 -lgdi32 $(LIBCOM) -luuid $(OPENGL_COMMONLIBS)
 libwgl_plugin_la_LIBADD = -lopengl32 -lgdi32 $(OPENGL_COMMONLIBS)
 
 libglwin32_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCLFAGS) -DHAVE_GL_CORE_SYMBOLS
+libglwin32_stitch_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCLFAGS) -DHAVE_GL_CORE_SYMBOLS
 libwgl_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCLFAGS)
 
 libglwin32_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
+libglwin32_stitch_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
 libwgl_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
 
 if HAVE_WIN32_DESKTOP
-vout_LTLIBRARIES += $(LTLIBglwin32) $(LTLIBwgl)
-EXTRA_LTLIBRARIES += libglwin32_plugin.la libwgl_plugin.la
+vout_LTLIBRARIES += $(LTLIBglwin32) $(LTLIBglwin32_stitch) $(LTLIBwgl)
+EXTRA_LTLIBRARIES += libglwin32_plugin.la libglwin32_stitch_plugin.la libwgl_plugin.la
 endif
 
 libwingdi_plugin_la_SOURCES = video_output/win32/wingdi.c \
