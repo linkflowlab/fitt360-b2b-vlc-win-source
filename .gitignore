@@ -52,4 +52,4 @@ include/vlc/libvlc_version.h
 build*
 contrib-*
 install-*
-
+win64/
