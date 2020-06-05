@@ -228,7 +228,8 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
 int vout_display_opengl_Display(vout_display_opengl_t *vgl,
                                 const video_format_t *source);
 
-//AIDEN ADDED FOR TEST
-int vout_display_opengl_SetProjection(vout_display_opengl_t *vgl, video_projection_mode_t type);
+// AIDEN: Added for New functions
+int vout_display_opengl_EnableEquirectangularProjection(vout_display_opengl_t *vgl, bool enable);
+int vout_display_opengl_EnableStitchingProjection(vout_display_opengl_t *vgl, bool enable);
 
 #endif

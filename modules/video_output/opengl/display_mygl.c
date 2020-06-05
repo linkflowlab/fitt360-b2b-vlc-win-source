@@ -41,6 +41,10 @@ static void Close (vlc_object_t *);
 #define GLES2_TEXT N_("myOpenGL ES 2 extension")
 #define PROVIDER_LONGTEXT N_( \
     "Extension through which to use the Open Graphics Library for test (OpenGL).")
+#define EQUIRECTANGLE_PROJECTION_TEXT N_("Enable equirectangular projection")
+#define EQUIRECTANGLE_PROJECTION_LONGTEXT N_("Enable equirectangular projection")
+#define STITCHING_PROJECTION_TEXT N_("Enable stitching projection")
+#define STITCHING_PROJECTION_LONGTEXT N_("Enable stitching projection")
 
 vlc_module_begin ()
 #if defined (USE_OPENGL_ES2)
@@ -48,6 +52,8 @@ vlc_module_begin ()
 # define MODULE_VARNAME "gles2"
     set_shortname (N_("myOpenGL ES2(test)"))
     set_description (N_("my OpenGL for Embedded Systems 2 video output for test"))
+    add_bool("equirectangular-projection", true, EQUIRECTANGLE_PROJECTION_TEXT, EQUIRECTANGLE_PROJECTION_LONGTEXT, true)
+    add_bool("stitching-projection", false, STITCHING_PROJECTION_TEXT, STITCHING_PROJECTION_LONGTEXT, true)
     set_capability ("vout display", 264)
     set_callbacks (Open, Close)
     add_shortcut ("myopengles2", "mygles2")
@@ -61,6 +67,8 @@ vlc_module_begin ()
     set_description (N_("myOpenGL video output for test"))
     set_category (CAT_VIDEO)
     set_subcategory (SUBCAT_VIDEO_VOUT)
+    add_bool("equirectangular-projection", true, EQUIRECTANGLE_PROJECTION_TEXT, EQUIRECTANGLE_PROJECTION_LONGTEXT, true)
+    add_bool("stitching-projection", false, STITCHING_PROJECTION_TEXT, STITCHING_PROJECTION_LONGTEXT, true)
     set_capability ("vout display", 269)
     set_callbacks (Open, Close)
     add_shortcut ("myopengl", "mygl")
@@ -139,6 +147,13 @@ static int Open (vlc_object_t *obj)
 
     sys->vgl = vout_display_opengl_New (&vd->fmt, &spu_chromas, sys->gl,
                                         &vd->cfg->viewpoint);
+
+    vout_display_opengl_EnableEquirectangularProjection(sys->vgl, var_InheritBool(vd, "equirectangular-projection"));
+    vout_display_opengl_EnableStitchingProjection(sys->vgl, var_InheritBool(vd, "stitching-projection"));
+
+    msg_Dbg(vd, "equirectangular projection : %s", var_InheritBool(vd, "equirectangular-projection") == true ? "true" : "false");
+    msg_Dbg(vd, "stitching projection : %s", var_InheritBool(vd, "stitching-projection") == true ? "true" : "false");
+
     vlc_gl_ReleaseCurrent (sys->gl);
 
     if (sys->vgl == NULL)

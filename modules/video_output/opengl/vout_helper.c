@@ -169,6 +169,10 @@ struct vout_display_opengl_t {
     float f_fovy; /* to avoid recalculating them when needed.      */
     float f_z;    /* Position of the camera on the shpere radius vector */
     float f_sar;
+
+    /* Misc */
+    bool equirectangularProjectionEnabled;
+    bool stitchingProjectionEnabled;
 };
 
 static const vlc_fourcc_t gl_subpicture_chromas[] = {
@@ -271,8 +275,8 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  video_projection_mode_t projection_mode,
                                  struct prgm *prgm)
 {
-    if (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
-        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD)
+    if (vgl->equirectangularProjectionEnabled && (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
+        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD))
     {
         getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
         getYRotMatrix(vgl->f_teta, prgm->var.YRotMatrix);
@@ -738,6 +742,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         return NULL;
 
     vgl->gl = gl;
+    vgl->equirectangularProjectionEnabled = true;
+    vgl->stitchingProjectionEnabled = false;
 
 #if defined(USE_OPENGL_ES2) || defined(HAVE_GL_CORE_SYMBOLS)
 #define GET_PROC_ADDR_CORE(name) vgl->vt.name = gl##name
@@ -966,8 +972,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->region = NULL;
     vgl->pool = NULL;
 
-    if (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
-     && vout_display_opengl_SetViewpoint(vgl, viewpoint) != VLC_SUCCESS)
+    if (vgl->equirectangularProjectionEnabled && (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
+     && vout_display_opengl_SetViewpoint(vgl, viewpoint) != VLC_SUCCESS))
     {
         vout_display_opengl_Delete(vgl);
         return NULL;
@@ -1523,10 +1529,17 @@ static int SetupCoords(vout_display_opengl_t *vgl,
                                left, top, right, bottom);
         break;
     case PROJECTION_MODE_EQUIRECTANGULAR:
-        i_ret = BuildSphere(vgl->prgm->tc->tex_count,
-                            &vertexCoord, &textureCoord, &nbVertices,
-                            &indices, &nbIndices,
-                            left, top, right, bottom);
+        if(vgl->equirectangularProjectionEnabled) {
+            i_ret = BuildSphere(vgl->prgm->tc->tex_count,
+                    &vertexCoord, &textureCoord, &nbVertices,
+                    &indices, &nbIndices,
+                    left, top, right, bottom);
+        } else {
+            i_ret = BuildRectangle(vgl->prgm->tc->tex_count,
+                    &vertexCoord, &textureCoord, &nbVertices,
+                    &indices, &nbIndices,
+                    left, top, right, bottom);
+        }
         break;
     case PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD:
         i_ret = BuildCube(vgl->prgm->tc->tex_count,
@@ -1799,7 +1812,11 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     return VLC_SUCCESS;
 }
 
-int vout_display_opengl_SetProjection(vout_display_opengl_t *vgl, video_projection_mode_t type) {
-	vgl->fmt.projection_mode = type;
+int vout_display_opengl_EnableEquirectangularProjection(vout_display_opengl_t *vgl, bool enable) {
+	vgl->equirectangularProjectionEnabled = enable;
+}
+
+int vout_display_opengl_EnableStitchingProjection(vout_display_opengl_t *vgl, bool enable) {
+    vgl->stitchingProjectionEnabled = enable;
 }
 

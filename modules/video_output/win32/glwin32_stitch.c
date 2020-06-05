@@ -45,11 +45,18 @@
 static int  Open (vlc_object_t *);
 static void Close(vlc_object_t *);
 
+#define EQUIRECTANGLE_PROJECTION_TEXT N_("Enable equirectangular projection")
+#define EQUIRECTANGLE_PROJECTION_LONGTEXT N_("Enable equirectangular projection")
+#define STITCHING_PROJECTION_TEXT N_("Enable stitching projection")
+#define STITCHING_PROJECTION_LONGTEXT N_("Enable stitching projection")
+
 vlc_module_begin()
     set_category(CAT_VIDEO)
     set_subcategory(SUBCAT_VIDEO_VOUT)
     set_shortname("OpenGL_stitch")
     set_description(N_("OpenGL video output for Windows with stitching"))
+    add_bool("equirectangular-projection", true, EQUIRECTANGLE_PROJECTION_TEXT, EQUIRECTANGLE_PROJECTION_LONGTEXT, true)
+    add_bool("stitching-projection", false, STITCHING_PROJECTION_TEXT, STITCHING_PROJECTION_LONGTEXT, true)
     set_capability("vout display", 270)
     add_shortcut("glwin32_stitch", "opengl_stitch")
     set_callbacks(Open, Close)
@@ -151,6 +158,13 @@ static int Open(vlc_object_t *object)
 
     sys->vgl = vout_display_opengl_New(&fmt, &subpicture_chromas, sys->gl,
                                        &vd->cfg->viewpoint);
+
+    vout_display_opengl_EnableEquirectangularProjection(sys->vgl, var_InheritBool(vd, "equirectangular-projection"));
+    vout_display_opengl_EnableStitchingProjection(sys->vgl, var_InheritBool(vd, "stitching-projection"));
+
+    msg_Dbg(vd, "equirectangular projection : %s", var_InheritBool(vd, "equirectangular-projection") == true ? "true" : "false");
+    msg_Dbg(vd, "stitching projection : %s", var_InheritBool(vd, "stitching-projection") == true ? "true" : "false");
+
     vlc_gl_ReleaseCurrent (sys->gl);
     if (!sys->vgl)
         goto error;
