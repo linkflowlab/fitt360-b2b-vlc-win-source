@@ -275,6 +275,15 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  video_projection_mode_t projection_mode,
                                  struct prgm *prgm)
 {
+    if(vgl->stitchingProjectionEnabled) {
+        memcpy(prgm->var.ProjectionMatrix, identity, sizeof(identity));
+        memcpy(prgm->var.ZRotMatrix, identity, sizeof(identity));
+        memcpy(prgm->var.YRotMatrix, identity, sizeof(identity));
+        memcpy(prgm->var.XRotMatrix, identity, sizeof(identity));
+        memcpy(prgm->var.ZoomMatrix, identity, sizeof(identity));
+        return;
+    }
+
     if (vgl->equirectangularProjectionEnabled && (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
         || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD))
     {
@@ -611,7 +620,14 @@ opengl_init_program(vout_display_opengl_t *vgl, struct prgm *prgm,
     tc->gl = vgl->gl;
     tc->vt = &vgl->vt;
     tc->b_dump_shaders = b_dump_shaders;
-    tc->pf_fragment_shader_init = opengl_fragment_shader_init_impl;
+    if(vgl->stitchingProjectionEnabled && !subpics) {
+        tc->pf_fragment_shader_init = opengl_fragment_shader_init_impl_for_stitch;
+        msg_Dbg(tc->gl,"AIDEN: shader: opengl_fragment_shader_init_impl_for_stitch");
+    }
+    else {
+        tc->pf_fragment_shader_init = opengl_fragment_shader_init_impl;
+        msg_Dbg(tc->gl,"AIDEN: shader: opengl_fragment_shader_init_impl");
+    }
     tc->glexts = glexts;
 #if defined(USE_OPENGL_ES2)
     tc->is_gles = true;
@@ -742,8 +758,14 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         return NULL;
 
     vgl->gl = gl;
-    vgl->equirectangularProjectionEnabled = true;
-    vgl->stitchingProjectionEnabled = false;
+
+    bool enableEquirectangular = var_InheritBool(gl, "equirectangular-projection");
+    bool enableStitching = var_InheritBool(gl, "stitching-projection");
+    msg_Dbg(gl, "AIDEN: equirectangular projection enabled: %s", enableEquirectangular ? "true" : "false");
+    msg_Dbg(gl, "AIDEN: stitching projection enabled: %s", enableStitching ? "true" : "false");
+
+    vgl->equirectangularProjectionEnabled = enableEquirectangular;
+    vgl->stitchingProjectionEnabled = enableStitching;
 
 #if defined(USE_OPENGL_ES2) || defined(HAVE_GL_CORE_SYMBOLS)
 #define GET_PROC_ADDR_CORE(name) vgl->vt.name = gl##name
@@ -972,7 +994,7 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->region = NULL;
     vgl->pool = NULL;
 
-    if (vgl->equirectangularProjectionEnabled && (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
+    if (!vgl->stitchingProjectionEnabled && vgl->equirectangularProjectionEnabled && (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
      && vout_display_opengl_SetViewpoint(vgl, viewpoint) != VLC_SUCCESS))
     {
         vout_display_opengl_Delete(vgl);
@@ -1529,7 +1551,7 @@ static int SetupCoords(vout_display_opengl_t *vgl,
                                left, top, right, bottom);
         break;
     case PROJECTION_MODE_EQUIRECTANGULAR:
-        if(vgl->equirectangularProjectionEnabled) {
+        if(!vgl->stitchingProjectionEnabled && vgl->equirectangularProjectionEnabled) {
             i_ret = BuildSphere(vgl->prgm->tc->tex_count,
                     &vertexCoord, &textureCoord, &nbVertices,
                     &indices, &nbIndices,

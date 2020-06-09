@@ -147,13 +147,6 @@ static int Open (vlc_object_t *obj)
 
     sys->vgl = vout_display_opengl_New (&vd->fmt, &spu_chromas, sys->gl,
                                         &vd->cfg->viewpoint);
-
-    vout_display_opengl_EnableEquirectangularProjection(sys->vgl, var_InheritBool(vd, "equirectangular-projection"));
-    vout_display_opengl_EnableStitchingProjection(sys->vgl, var_InheritBool(vd, "stitching-projection"));
-
-    msg_Dbg(vd, "equirectangular projection : %s", var_InheritBool(vd, "equirectangular-projection") == true ? "true" : "false");
-    msg_Dbg(vd, "stitching projection : %s", var_InheritBool(vd, "stitching-projection") == true ? "true" : "false");
-
     vlc_gl_ReleaseCurrent (sys->gl);
 
     if (sys->vgl == NULL)

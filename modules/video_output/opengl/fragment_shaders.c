@@ -796,3 +796,239 @@ opengl_fragment_shader_init_impl(opengl_tex_converter_t *tc, GLenum tex_target,
 
     return fragment_shader;
 }
+
+GLuint
+opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum tex_target,
+                                 vlc_fourcc_t chroma, video_color_space_t yuv_space)
+{
+    const char *swizzle_per_tex[PICTURE_PLANE_MAX] = { NULL, };
+    const bool is_yuv = vlc_fourcc_IsYUV(chroma);
+    bool yuv_swap_uv = false;
+    int ret;
+
+    const vlc_chroma_description_t *desc = vlc_fourcc_GetChromaDescription(chroma);
+    if (desc == NULL)
+        return VLC_EGENERIC;
+
+    if (chroma == VLC_CODEC_XYZ12)
+        return xyz12_shader_init(tc);
+
+    if (is_yuv)
+        ret = tc_yuv_base_init(tc, tex_target, chroma, desc, yuv_space, &yuv_swap_uv, swizzle_per_tex);
+    else
+        ret = tc_rgb_base_init(tc, tex_target, chroma);
+
+    if (ret != VLC_SUCCESS)
+        return 0;
+
+    const char *sampler, *lookup, *coord_name;
+    switch (tex_target)
+    {
+        case GL_TEXTURE_2D:
+            sampler = "sampler2D";
+            lookup  = "texture2D";
+            coord_name = "TexCoord";
+            break;
+        case GL_TEXTURE_RECTANGLE:
+            sampler = "sampler2DRect";
+            lookup  = "texture2DRect";
+            coord_name = "TexCoordRect";
+            break;
+        default:
+            vlc_assert_unreachable();
+    }
+
+    struct vlc_memstream ms;
+    if (vlc_memstream_open(&ms) != 0)
+        return 0;
+
+#define ADD(x) vlc_memstream_puts(&ms, x)
+#define ADDF(x, ...) vlc_memstream_printf(&ms, x, ##__VA_ARGS__)
+
+    ADDF("#version %u\n%s", tc->glsl_version, tc->glsl_precision_header);
+
+    for (unsigned i = 0; i < tc->tex_count; ++i)
+        ADDF("uniform %s Texture%u;\n"
+             "varying vec2 TexCoord%u;\n", sampler, i, i);
+
+#ifdef HAVE_LIBPLACEBO
+    if (tc->pl_sh) {
+        struct pl_shader *sh = tc->pl_sh;
+        struct pl_color_map_params color_params = pl_color_map_default_params;
+        color_params.intent = var_InheritInteger(tc->gl, "rendering-intent");
+        color_params.tone_mapping_algo = var_InheritInteger(tc->gl, "tone-mapping");
+        color_params.tone_mapping_param = var_InheritFloat(tc->gl, "tone-mapping-param");
+        color_params.tone_mapping_desaturate = var_InheritFloat(tc->gl, "tone-mapping-desat");
+        color_params.gamut_warning = var_InheritBool(tc->gl, "tone-mapping-warn");
+
+        struct pl_color_space dst_space = pl_color_space_unknown;
+        dst_space.primaries = var_InheritInteger(tc->gl, "target-prim");
+        dst_space.transfer = var_InheritInteger(tc->gl, "target-trc");
+
+        pl_shader_color_map(sh, &color_params,
+                pl_color_space_from_video_format(&tc->fmt),
+                dst_space, NULL, false);
+
+        struct pl_shader_obj *dither_state = NULL;
+        int method = var_InheritInteger(tc->gl, "dither-algo");
+        if (method >= 0) {
+
+            unsigned out_bits = 0;
+            int override = var_InheritInteger(tc->gl, "dither-depth");
+            if (override > 0)
+                out_bits = override;
+            else
+            {
+                GLint fb_depth = 0;
+#if !defined(USE_OPENGL_ES2)
+                /* fetch framebuffer depth (we are already bound to the default one). */
+                if (tc->vt->GetFramebufferAttachmentParameteriv != NULL)
+                    tc->vt->GetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT,
+                                                                GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE,
+                                                                &fb_depth);
+#endif
+                if (fb_depth <= 0)
+                    fb_depth = 8;
+                out_bits = fb_depth;
+            }
+
+            pl_shader_dither(sh, out_bits, &dither_state, &(struct pl_dither_params) {
+                .method   = method,
+                .lut_size = 4, // avoid too large values, since this gets embedded
+            });
+        }
+
+        const struct pl_shader_res *res = tc->pl_sh_res = pl_shader_finalize(sh);
+        pl_shader_obj_destroy(&dither_state);
+
+        FREENULL(tc->uloc.pl_vars);
+        tc->uloc.pl_vars = calloc(res->num_variables, sizeof(GLint));
+        for (int i = 0; i < res->num_variables; i++) {
+            struct pl_shader_var sv = res->variables[i];
+#if PL_API_VER >= 4
+            const char *glsl_type_name = pl_var_glsl_type_name(sv.var);
+#else
+            const char *glsl_type_name = ra_var_glsl_type_name(sv.var);
+#endif
+            ADDF("uniform %s %s;\n", glsl_type_name, sv.var.name);
+        }
+
+        // We can't handle these yet, but nothing we use requires them, either
+        assert(res->num_vertex_attribs == 0);
+        assert(res->num_descriptors == 0);
+
+        ADD(res->glsl);
+    }
+#else
+    if (tc->fmt.transfer == TRANSFER_FUNC_SMPTE_ST2084 ||
+        tc->fmt.primaries == COLOR_PRIMARIES_BT2020)
+    {
+        // no warning for HLG because it's more or less backwards-compatible
+        msg_Warn(tc->gl, "VLC needs to be built with support for libplacebo in order to display wide gamut or HDR signals correctly.");
+    }
+#endif
+
+    if (tex_target == GL_TEXTURE_RECTANGLE)
+    {
+        for (unsigned i = 0; i < tc->tex_count; ++i)
+            ADDF("uniform vec2 TexSize%u;\n", i);
+    }
+
+    if (is_yuv)
+        ADD("uniform vec4 Coefficients[4];\n");
+
+    ADD("uniform vec4 FillColor;\n"
+        "void main(void) {\n"
+        " float val;vec4 colors;\n");
+
+    if (tex_target == GL_TEXTURE_RECTANGLE)
+    {
+        for (unsigned i = 0; i < tc->tex_count; ++i)
+            ADDF(" vec2 TexCoordRect%u = vec2(TexCoord%u.x * TexSize%u.x, TexCoord%u.y * TexSize%u.y);\n", i, i, i, i, i);
+    }
+
+    unsigned color_idx = 0;
+    for (unsigned i = 0; i < tc->tex_count; ++i)
+    {
+        const char *swizzle = swizzle_per_tex[i];
+        if (swizzle)
+        {
+            size_t swizzle_count = strlen(swizzle);
+            ADDF(" colors = %s(Texture%u, %s%u);\n", lookup, i, coord_name, i);
+            for (unsigned j = 0; j < swizzle_count; ++j)
+            {
+                ADDF(" val = colors.%c;\n"
+                     " vec4 color%u = vec4(val, val, val, 1);\n", swizzle[j], color_idx);
+                color_idx++;
+                assert(color_idx <= PICTURE_PLANE_MAX);
+            }
+        }
+        else
+        {
+            ADDF(" vec4 color%u = %s(Texture%u, %s%u);\n", color_idx, lookup, i, coord_name, i);
+            color_idx++;
+            assert(color_idx <= PICTURE_PLANE_MAX);
+        }
+    }
+    unsigned color_count = color_idx;
+    assert(yuv_space == COLOR_SPACE_UNDEF || color_count == 3);
+
+    if (is_yuv)
+        ADD(" vec4 result = (color0 * Coefficients[0]) + Coefficients[3];\n");
+    else
+        ADD(" vec4 result = color0;\n");
+
+    for (unsigned i = 1; i < color_count; ++i)
+    {
+        if (yuv_swap_uv)
+        {
+            assert(color_count == 3);
+            color_idx = (i % 2) + 1;
+        }
+        else
+            color_idx = i;
+
+        if (is_yuv)
+            ADDF(" result = (color%u * Coefficients[%u]) + result;\n", color_idx, i);
+        else
+            ADDF(" result = color%u + result;\n", color_idx);
+    }
+
+#ifdef HAVE_LIBPLACEBO
+    if (tc->pl_sh_res) {
+        const struct pl_shader_res *res = tc->pl_sh_res;
+        assert(res->input  == PL_SHADER_SIG_COLOR);
+        assert(res->output == PL_SHADER_SIG_COLOR);
+        ADDF(" result = %s(result);\n", res->name);
+    }
+#endif
+
+    ADD(" gl_FragColor = result * FillColor;\n"
+        "}");
+
+#undef ADD
+#undef ADDF
+
+    if (vlc_memstream_close(&ms) != 0)
+        return 0;
+
+    GLuint fragment_shader = tc->vt->CreateShader(GL_FRAGMENT_SHADER);
+    if (fragment_shader == 0)
+    {
+        free(ms.ptr);
+        return 0;
+    }
+    GLint length = ms.length;
+    tc->vt->ShaderSource(fragment_shader, 1, (const char **)&ms.ptr, &length);
+    tc->vt->CompileShader(fragment_shader);
+    if (tc->b_dump_shaders)
+        msg_Dbg(tc->gl, "\n=== Fragment shader for fourcc: %4.4s, colorspace: %d ===\n%s\n", (const char *)&chroma, yuv_space, ms.ptr);
+    free(ms.ptr);
+
+    tc->tex_target = tex_target;
+
+    tc->pf_fetch_locations = tc_base_fetch_locations;
+    tc->pf_prepare_shader = tc_base_prepare_shader;
+
+    return fragment_shader;
+}
