@@ -937,9 +937,48 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
     if (is_yuv)
         ADD("uniform vec4 Coefficients[4];\n");
 
-    ADD("uniform vec4 FillColor;\n"
-        "void main(void) {\n"
-        " float val;vec4 colors;\n");
+    ADD("uniform vec4 FillColor;\n\n");
+
+    ADD("vec2 getLSourceCoord(vec2 pt) {\n"
+        " if(pt.y < 0.5) {\n"
+        " pt.x = pt.x - 0.1;\n"
+        " if(pt.x < 0.0 || pt.x > 0.5) {\n"
+        "  pt.x = -1.0;\n"
+        " }\n"
+        " } else {\n"
+        " pt.x = pt.x + 0.5 - 0.1;\n"
+        " if(pt.x < 0.5 || pt.x > 1.0) {\n"
+        "  pt.x = -1.0;\n"
+        " }\n"
+        " }\n"
+        " return pt;\n"
+        "};\n\n"
+       );
+    ADD("vec2 getRSourceCoord(vec2 pt) {\n"
+        " if(pt.y < 0.5) {\n"
+        " pt.x = pt.x + 0.1;\n"
+        " if(pt.x < 0.5 || pt.x > 1.0) {\n"
+        "  pt.x = -1.0;\n"
+        " }\n"
+        " } else {\n"
+        " pt.x = pt.x - 0.5 + 0.1;\n"
+        " if(pt.x < 0.0 || pt.x > 0.5) {\n"
+        "  pt.x = -1.0;\n"
+        " }\n"
+        " }\n"
+        " return pt;\n"
+        "};\n\n"
+       );
+
+    ADD("void main(void) {\n"
+        " float val;\n"
+        " vec4 colors;\n"
+        " vec2 coord_l;\n"
+        " vec2 coord_r;\n"
+        " vec4 colors_l;\n"
+        " vec4 colors_r;\n"
+        " vec2 validity;\n"
+       );
 
     if (tex_target == GL_TEXTURE_RECTANGLE)
     {
@@ -954,18 +993,28 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         if (swizzle)
         {
             size_t swizzle_count = strlen(swizzle);
-            ADDF(" colors = %s(Texture%u, %s%u);\n", lookup, i, coord_name, i);
+            // get pixel corresponding pixel location
+            ADDF("  coord_l = getLSourceCoord(%s%u);\n", coord_name, i);
+            ADDF("  coord_r = getRSourceCoord(%s%u);\n", coord_name, i);
+            ADDF("  colors_l = %s(Texture%u, coord_l);\n", lookup, i);
+            ADDF("  colors_r = %s(Texture%u, coord_r);\n", lookup, i);
+            // composite
+            ADD ("  validity.x = (coord_l.x != -1.0) ? 1.0 : 0.0;\n");
+            ADD ("  validity.y = (coord_r.x != -1.0) ? 1.0 : 0.0;\n");
+            // 0(validity.x + validity.y = 0)으로 나누어 Nan발생시에는 yuv좌표계상에서 black컬러로 처리되는 듯 하다
+            ADD ("  colors = (colors_l * validity.x + colors_r * validity.y) / (validity.x + validity.y);\n");
             for (unsigned j = 0; j < swizzle_count; ++j)
             {
                 ADDF(" val = colors.%c;\n"
-                     " vec4 color%u = vec4(val, val, val, 1);\n", swizzle[j], color_idx);
+                     " vec4 color%u = vec4(val, val, val, 1);\n\n", swizzle[j], color_idx);
                 color_idx++;
                 assert(color_idx <= PICTURE_PLANE_MAX);
             }
         }
         else
         {
-            ADDF(" vec4 color%u = %s(Texture%u, %s%u);\n", color_idx, lookup, i, coord_name, i);
+            //FIXME(aiden): Need to change the logic according to swizzle case above
+            ADDF(" vec4 color%u = %s(Texture%u, getSourceCoord(%s%u));\n\n", color_idx, lookup, i, coord_name, i);
             color_idx++;
             assert(color_idx <= PICTURE_PLANE_MAX);
         }
