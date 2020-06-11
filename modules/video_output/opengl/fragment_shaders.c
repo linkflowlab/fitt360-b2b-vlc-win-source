@@ -938,36 +938,47 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         ADD("uniform vec4 Coefficients[4];\n");
 
     ADD("uniform vec4 FillColor;\n\n");
+    ADD("const float mixRatioFront = 0.1;\n");
+    ADD("const float mixRatioRear  = 0.1;\n");
+    ADD("const vec3 border = vec3(0.0, 0.5, 1.0);\n");
 
-    ADD("vec2 getLSourceCoord(vec2 pt) {\n"
-        " if(pt.y < 0.5) {\n"
-        " pt.x = pt.x - 0.1;\n"
-        " if(pt.x < 0.0 || pt.x > 0.5) {\n"
-        "  pt.x = -1.0;\n"
-        " }\n"
-        " } else {\n"
-        " pt.x = pt.x + 0.5 - 0.1;\n"
-        " if(pt.x < 0.5 || pt.x > 1.0) {\n"
-        "  pt.x = -1.0;\n"
-        " }\n"
-        " }\n"
-        " return pt;\n"
-        "};\n\n"
+    ADD("vec2 getLSourceCoord(vec2 pt) {                                    \n"
+        "   if(pt.y < border.y) {                                           \n"
+                // Left front
+        "       pt.x = pt.x - mixRatioFront;                                \n"
+        "       if(pt.x < border.x || pt.x > border.y) {                    \n"
+        "           pt.x = -1.0;                                            \n"
+        "       }                                                           \n"
+        "   } else {                                                        \n"
+                // Left Rear
+        "       pt.x = pt.x + border.y - mixRatioRear;                      \n"
+        "       if(pt.x < border.y || pt.x > border.z) {                    \n"
+        "           pt.x = -1.0;                                            \n"
+        "       }                                                           \n"
+        "   }                                                               \n"
+        "                                                                   \n"
+        "   return pt;                                                      \n"
+        "};                                                                 \n"
+        "                                                                   \n"
        );
-    ADD("vec2 getRSourceCoord(vec2 pt) {\n"
-        " if(pt.y < 0.5) {\n"
-        " pt.x = pt.x + 0.1;\n"
-        " if(pt.x < 0.5 || pt.x > 1.0) {\n"
-        "  pt.x = -1.0;\n"
-        " }\n"
-        " } else {\n"
-        " pt.x = pt.x - 0.5 + 0.1;\n"
-        " if(pt.x < 0.0 || pt.x > 0.5) {\n"
-        "  pt.x = -1.0;\n"
-        " }\n"
-        " }\n"
-        " return pt;\n"
-        "};\n\n"
+    ADD("vec2 getRSourceCoord(vec2 pt) {                                    \n"
+        "   if(pt.y < border.y) {                                           \n"
+                // Right front
+        "       pt.x = pt.x + mixRatioFront;                                \n"
+        "       if(pt.x < border.y || pt.x > border.z) {                    \n"
+        "           pt.x = -1.0;                                            \n"
+        "       }                                                           \n"
+        "   } else {                                                        \n"
+                // Right Rear
+        "       pt.x = pt.x - border.y + mixRatioRear;                      \n"
+        "       if(pt.x < border.x || pt.x > border.y) {                    \n"
+        "           pt.x = -1.0;                                            \n"
+        "       }                                                           \n"
+        "   }                                                               \n"
+        "                                                                   \n"
+        "   return pt;                                                      \n"
+        "};                                                                 \n"
+        "                                                                   \n"
        );
 
     ADD("void main(void) {\n"
@@ -1070,6 +1081,26 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
     GLint length = ms.length;
     tc->vt->ShaderSource(fragment_shader, 1, (const char **)&ms.ptr, &length);
     tc->vt->CompileShader(fragment_shader);
+
+    //GLint compiled = 0;
+    //tc->vt->GetShaderiv(fragment_shader, GL_COMPILE_STATUS, &compiled);
+    //if(!compiled) {
+    //    GLint infoLen = 0;
+    //    tc->vt->GetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &infoLen);
+    //    if (infoLen) {
+    //        char* buf = (char*) malloc(infoLen);
+    //        if (buf) {
+    //            tc->vt->GetShaderInfoLog(fragment_shader, infoLen, NULL, buf);
+    //            msg_Err(tc->gl, "Could not compile shader %d:\n%s\n", GL_FRAGMENT_SHADER, buf);
+    //            free(buf);
+    //        }
+    //        tc->vt->DeleteShader(fragment_shader);
+    //        fragment_shader = 0;
+    //    }
+    //    free(ms.ptr);
+    //    return 0;
+    //}
+
     if (tc->b_dump_shaders)
         msg_Dbg(tc->gl, "\n=== Fragment shader for fourcc: %4.4s, colorspace: %d ===\n%s\n", (const char *)&chroma, yuv_space, ms.ptr);
     free(ms.ptr);
