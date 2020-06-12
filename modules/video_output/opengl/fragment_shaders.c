@@ -945,12 +945,17 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
     ADDF("const float mixRatioFront = %.3f;\n", frontMix);
     ADDF("const float mixRatioRear  = %.3f;\n", rearMix);
     ADD("const vec3 border = vec3(0.0, 0.5, 1.0);\n");
+    ADD("const int scaling = 1;\n");
 
     ADD("vec3 getLSourceCoord(vec2 pt) {                                    \n"
         "   float alpha = 1.0;                                              \n"
         "   if(pt.y < border.y) {                                           \n"
                 // Left front
-        "       pt.x = pt.x - mixRatioFront;                                \n"
+        "       if(scaling != 1) pt.x -= mixRatioFront;                     \n"
+        "       else {                                                      \n"
+        "           float scale = (border.y + mixRatioFront) / border.y;    \n"
+        "           pt.x = ((pt.x - mixRatioFront)) / scale + (mixRatioFront / scale);\n"
+        "       }                                                           \n"
         "       if(pt.x < border.x || pt.x > border.y) {                    \n"
         "           alpha = 0.0;                                            \n"
         "       } else {                                                    \n"
@@ -963,7 +968,11 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         "       }                                                           \n"
         "   } else {                                                        \n"
                 // Left Rear
-        "       pt.x = pt.x + border.y - mixRatioRear;                      \n"
+        "       if(scaling != 1) pt.x += (border.y - mixRatioRear);         \n"
+        "       else {                                                      \n"
+        "           float scale = (border.y + mixRatioRear) / border.y;     \n"
+        "           pt.x = (pt.x - mixRatioRear) / scale + (mixRatioRear / scale) + border.y;\n"
+        "       }                                                           \n"
         "       if(pt.x < border.y || pt.x > border.z) {                    \n"
         "           alpha = 0.0;                                            \n"
         "       } else {                                                    \n"
@@ -984,7 +993,11 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         "   float alpha = 1.0;                                              \n"
         "   if(pt.y < border.y) {                                           \n"
                 // Right front
-        "       pt.x = pt.x + mixRatioFront;                                \n"
+        "       if(scaling != 1) pt.x += mixRatioFront;                     \n"
+        "       else {                                                      \n"
+        "           float scale = (border.y + mixRatioFront) / border.y;    \n"
+        "           pt.x = ((pt.x + mixRatioFront)) / scale + (mixRatioFront / scale);\n"
+        "       }                                                           \n"
         "       if(pt.x < border.y || pt.x > border.z) {                    \n"
         "           alpha = 0.0;                                            \n"
         "       } else {                                                    \n"
@@ -997,7 +1010,11 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         "       }                                                           \n"
         "   } else {                                                        \n"
                 // Right Rear
-        "       pt.x = pt.x - border.y + mixRatioRear;                      \n"
+        "       if(scaling != 1) pt.x -= (border.y - mixRatioRear);         \n"
+        "       else {                                                      \n"
+        "           float scale = (border.y + mixRatioRear) / border.y;     \n"
+        "           pt.x = (pt.x + mixRatioRear) / scale + (mixRatioRear / scale) - border.y;\n"
+        "       }                                                           \n"
         "       if(pt.x < border.x || pt.x > border.y) {                    \n"
         "           alpha = 0.0;                                            \n"
         "       } else {                                                    \n"
@@ -1022,7 +1039,6 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         " vec3 coord_r;\n"
         " vec4 colors_l;\n"
         " vec4 colors_r;\n"
-        " vec2 validity;\n"
        );
 
     if (tex_target == GL_TEXTURE_RECTANGLE)
@@ -1044,9 +1060,7 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
             ADDF("  colors_l = %s(Texture%u, coord_l.xy);\n", lookup, i);
             ADDF("  colors_r = %s(Texture%u, coord_r.xy);\n", lookup, i);
             // composite
-            //ADD ("  validity.x = (coord_l.x != -1.0) ? 1.0 : 0.0;\n");
-            //ADD ("  validity.y = (coord_r.x != -1.0) ? 1.0 : 0.0;\n");
-            // 0(validity.x + validity.y = 0)으로 나누어 Nan발생시에는 yuv좌표계상에서 black컬러로 처리되는 듯 하다
+            // 0(coord_l.z + coord_r.z = 0)으로 나누어 Nan발생시에는 yuv좌표계상에서 black컬러로 처리되는 듯 하다
             ADD ("  colors = (colors_l * coord_l.z + colors_r * coord_r.z) / (coord_l.z + coord_r.z);\n");
             for (unsigned j = 0; j < swizzle_count; ++j)
             {
