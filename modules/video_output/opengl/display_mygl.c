@@ -45,6 +45,8 @@ static void Close (vlc_object_t *);
 #define EQUIRECTANGLE_PROJECTION_LONGTEXT N_("Enable equirectangular projection")
 #define STITCHING_PROJECTION_TEXT N_("Enable stitching projection")
 #define STITCHING_PROJECTION_LONGTEXT N_("Enable stitching projection")
+#define STITCHING_PROJECTION_RATIO_FRONT_TEXT N_("Overlapping ratio(front)")
+#define STITCHING_PROJECTION_RATIO_REAR_TEXT N_("Overlapping ratio(rear)")
 
 vlc_module_begin ()
 #if defined (USE_OPENGL_ES2)
@@ -54,6 +56,10 @@ vlc_module_begin ()
     set_description (N_("my OpenGL for Embedded Systems 2 video output for test"))
     add_bool("equirectangular-projection", true, EQUIRECTANGLE_PROJECTION_TEXT, EQUIRECTANGLE_PROJECTION_LONGTEXT, true)
     add_bool("stitching-projection", false, STITCHING_PROJECTION_TEXT, STITCHING_PROJECTION_LONGTEXT, true)
+    add_float_with_range( "stitching-ratio-front", 0.075, 0.0, 0.25, STITCHING_PROJECTION_RATIO_FRONT_TEXT, STITCHING_PROJECTION_RATIO_FRONT_TEXT, false )
+    change_safe();
+    add_float_with_range( "stitching-ratio-rear", 0.115, 0.0, 0.25, STITCHING_PROJECTION_RATIO_REAR_TEXT, STITCHING_PROJECTION_RATIO_REAR_TEXT, false )
+    change_safe();
     set_capability ("vout display", 264)
     set_callbacks (Open, Close)
     add_shortcut ("myopengles2", "mygles2")
@@ -69,6 +75,10 @@ vlc_module_begin ()
     set_subcategory (SUBCAT_VIDEO_VOUT)
     add_bool("equirectangular-projection", true, EQUIRECTANGLE_PROJECTION_TEXT, EQUIRECTANGLE_PROJECTION_LONGTEXT, true)
     add_bool("stitching-projection", false, STITCHING_PROJECTION_TEXT, STITCHING_PROJECTION_LONGTEXT, true)
+    add_float_with_range( "stitching-ratio-front", 0.075, 0.0, 0.25, STITCHING_PROJECTION_RATIO_FRONT_TEXT, STITCHING_PROJECTION_RATIO_FRONT_TEXT, false )
+    change_safe();
+    add_float_with_range( "stitching-ratio-rear", 0.115, 0.0, 0.25, STITCHING_PROJECTION_RATIO_REAR_TEXT, STITCHING_PROJECTION_RATIO_REAR_TEXT, false )
+    change_safe();
     set_capability ("vout display", 269)
     set_callbacks (Open, Close)
     add_shortcut ("myopengl", "mygl")

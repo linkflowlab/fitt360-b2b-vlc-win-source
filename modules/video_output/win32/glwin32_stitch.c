@@ -57,6 +57,10 @@ vlc_module_begin()
     set_description(N_("OpenGL video output for Windows with stitching"))
     add_bool("equirectangular-projection", true, EQUIRECTANGLE_PROJECTION_TEXT, EQUIRECTANGLE_PROJECTION_LONGTEXT, true)
     add_bool("stitching-projection", false, STITCHING_PROJECTION_TEXT, STITCHING_PROJECTION_LONGTEXT, true)
+    add_float_with_range( "stitching-ratio-front", 0.075, 0.0, 0.25, STITCHING_PROJECTION_RATIO_FRONT_TEXT, STITCHING_PROJECTION_RATIO_FRONT_TEXT, false )
+    change_safe();
+    add_float_with_range( "stitching-ratio-rear", 0.115, 0.0, 0.25, STITCHING_PROJECTION_RATIO_REAR_TEXT, STITCHING_PROJECTION_RATIO_REAR_TEXT, false )
+    change_safe();
     set_capability("vout display", 270)
     add_shortcut("glwin32_stitch", "opengl_stitch")
     set_callbacks(Open, Close)

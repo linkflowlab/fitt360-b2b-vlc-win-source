@@ -938,45 +938,79 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         ADD("uniform vec4 Coefficients[4];\n");
 
     ADD("uniform vec4 FillColor;\n\n");
-    ADD("const float mixRatioFront = 0.1;\n");
-    ADD("const float mixRatioRear  = 0.1;\n");
+
+    float frontMix = var_InheritFloat(tc->gl, "stitching-ratio-front");
+    float rearMix = var_InheritFloat(tc->gl, "stitching-ratio-rear");
+
+    ADDF("const float mixRatioFront = %.3f;\n", frontMix);
+    ADDF("const float mixRatioRear  = %.3f;\n", rearMix);
     ADD("const vec3 border = vec3(0.0, 0.5, 1.0);\n");
 
-    ADD("vec2 getLSourceCoord(vec2 pt) {                                    \n"
+    ADD("vec3 getLSourceCoord(vec2 pt) {                                    \n"
+        "   float alpha = 1.0;                                              \n"
         "   if(pt.y < border.y) {                                           \n"
                 // Left front
         "       pt.x = pt.x - mixRatioFront;                                \n"
         "       if(pt.x < border.x || pt.x > border.y) {                    \n"
-        "           pt.x = -1.0;                                            \n"
+        "           alpha = 0.0;                                            \n"
+        "       } else {                                                    \n"
+        "           float overlap = 2.0 * mixRatioFront;                    \n"
+        "           float start = border.y - overlap;                       \n"
+        "           float end = border.y;                                   \n"
+        "           if(pt.x > start && pt.x < end) {                        \n"
+        "               alpha = 1.0 - (pt.x - start) * (1.0 / overlap);     \n"
+        "           }                                                       \n"
         "       }                                                           \n"
         "   } else {                                                        \n"
                 // Left Rear
         "       pt.x = pt.x + border.y - mixRatioRear;                      \n"
         "       if(pt.x < border.y || pt.x > border.z) {                    \n"
-        "           pt.x = -1.0;                                            \n"
+        "           alpha = 0.0;                                            \n"
+        "       } else {                                                    \n"
+        "           float overlap = 2.0 * mixRatioRear;                     \n"
+        "           float start = border.z - overlap;                       \n"
+        "           float end = border.z;                                   \n"
+        "           if(pt.x > start && pt.x < end) {                        \n"
+        "               alpha = 1.0 - (pt.x - start) * (1.0 / overlap);     \n"
+        "           }                                                       \n"
         "       }                                                           \n"
         "   }                                                               \n"
         "                                                                   \n"
-        "   return pt;                                                      \n"
+        "   return vec3(pt, alpha);                                         \n"
         "};                                                                 \n"
         "                                                                   \n"
        );
-    ADD("vec2 getRSourceCoord(vec2 pt) {                                    \n"
+    ADD("vec3 getRSourceCoord(vec2 pt) {                                    \n"
+        "   float alpha = 1.0;                                              \n"
         "   if(pt.y < border.y) {                                           \n"
                 // Right front
         "       pt.x = pt.x + mixRatioFront;                                \n"
         "       if(pt.x < border.y || pt.x > border.z) {                    \n"
-        "           pt.x = -1.0;                                            \n"
+        "           alpha = 0.0;                                            \n"
+        "       } else {                                                    \n"
+        "           float overlap = 2.0 * mixRatioFront;                    \n"
+        "           float start = border.y;                                 \n"
+        "           float end = border.y + overlap;                         \n"
+        "           if(pt.x > start && pt.x < end) {                        \n"
+        "               alpha = (pt.x - start) * (1.0 / overlap);           \n"
+        "           }                                                       \n"
         "       }                                                           \n"
         "   } else {                                                        \n"
                 // Right Rear
         "       pt.x = pt.x - border.y + mixRatioRear;                      \n"
         "       if(pt.x < border.x || pt.x > border.y) {                    \n"
-        "           pt.x = -1.0;                                            \n"
+        "           alpha = 0.0;                                            \n"
+        "       } else {                                                    \n"
+        "           float overlap = 2.0 * mixRatioRear;                     \n"
+        "           float start = border.x;                                 \n"
+        "           float end = border.x + overlap;                         \n"
+        "           if(pt.x > start && pt.x < end) {                        \n"
+        "               alpha = (pt.x - start) * (1.0 / overlap);           \n"
+        "           }                                                       \n"
         "       }                                                           \n"
         "   }                                                               \n"
         "                                                                   \n"
-        "   return pt;                                                      \n"
+        "   return vec3(pt, alpha);                                         \n"
         "};                                                                 \n"
         "                                                                   \n"
        );
@@ -984,8 +1018,8 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
     ADD("void main(void) {\n"
         " float val;\n"
         " vec4 colors;\n"
-        " vec2 coord_l;\n"
-        " vec2 coord_r;\n"
+        " vec3 coord_l;\n"
+        " vec3 coord_r;\n"
         " vec4 colors_l;\n"
         " vec4 colors_r;\n"
         " vec2 validity;\n"
@@ -1007,13 +1041,13 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
             // get pixel corresponding pixel location
             ADDF("  coord_l = getLSourceCoord(%s%u);\n", coord_name, i);
             ADDF("  coord_r = getRSourceCoord(%s%u);\n", coord_name, i);
-            ADDF("  colors_l = %s(Texture%u, coord_l);\n", lookup, i);
-            ADDF("  colors_r = %s(Texture%u, coord_r);\n", lookup, i);
+            ADDF("  colors_l = %s(Texture%u, coord_l.xy);\n", lookup, i);
+            ADDF("  colors_r = %s(Texture%u, coord_r.xy);\n", lookup, i);
             // composite
-            ADD ("  validity.x = (coord_l.x != -1.0) ? 1.0 : 0.0;\n");
-            ADD ("  validity.y = (coord_r.x != -1.0) ? 1.0 : 0.0;\n");
+            //ADD ("  validity.x = (coord_l.x != -1.0) ? 1.0 : 0.0;\n");
+            //ADD ("  validity.y = (coord_r.x != -1.0) ? 1.0 : 0.0;\n");
             // 0(validity.x + validity.y = 0)으로 나누어 Nan발생시에는 yuv좌표계상에서 black컬러로 처리되는 듯 하다
-            ADD ("  colors = (colors_l * validity.x + colors_r * validity.y) / (validity.x + validity.y);\n");
+            ADD ("  colors = (colors_l * coord_l.z + colors_r * coord_r.z) / (coord_l.z + coord_r.z);\n");
             for (unsigned j = 0; j < swizzle_count; ++j)
             {
                 ADDF(" val = colors.%c;\n"
