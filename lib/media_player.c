@@ -797,6 +797,8 @@ libvlc_media_player_new( libvlc_instance_t *instance )
     var_Create(mp, "alpha-blend-ratio-front", VLC_VAR_FLOAT|VLC_VAR_DOINHERIT);
     var_Create(mp, "alpha-blend-ratio-rear", VLC_VAR_FLOAT|VLC_VAR_DOINHERIT);
     var_Create(mp, "alpha-blend-fit-to-display", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
+    var_Create(mp, "alpha-blend-show-divider", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
+    var_Create(mp, "alpha-blend-enable-blend", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
 
     mp->p_md = NULL;
     mp->state = libvlc_NothingSpecial;

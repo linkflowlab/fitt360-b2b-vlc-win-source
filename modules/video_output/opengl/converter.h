@@ -323,7 +323,9 @@ struct opengl_tex_converter_t
     struct {
         GLint mixRatioFront; // mixture ratio between front cameras(0.0 ~ 0.25, 0.25 to whole overlap)
         GLint mixRatioRear;  // mixture ratio between rear cameras(0.0 ~ 0.25, 0.25 to whole overlap)
-        GLint fitToDisplay;       // fit alpha blended image to display width
+        GLint fitToDisplay;  // fit alpha blended image to display width
+        GLint showDivider;   // show horizontal/vertical divider between cameras
+        GLint enableBlend;   // Alpha blending enabled (start rendering with rear camera swapping)
     } uAlphaBlendParams;
 
     bool yuv_color;

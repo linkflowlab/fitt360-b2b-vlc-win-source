@@ -360,6 +360,8 @@ tc_base_fetch_locations(opengl_tex_converter_t *tc, GLuint program)
     tc->uAlphaBlendParams.mixRatioFront = tc->vt->GetUniformLocation(program, "mixRatioFront");
     tc->uAlphaBlendParams.mixRatioRear  = tc->vt->GetUniformLocation(program, "mixRatioRear");
     tc->uAlphaBlendParams.fitToDisplay  = tc->vt->GetUniformLocation(program, "fitToDisplay");
+    tc->uAlphaBlendParams.showDivider   = tc->vt->GetUniformLocation(program, "showDivider");
+    tc->uAlphaBlendParams.enableBlend   = tc->vt->GetUniformLocation(program, "enableBlend");
 
 #ifdef HAVE_LIBPLACEBO
     const struct pl_shader_res *res = tc->pl_sh_res;
@@ -400,6 +402,16 @@ tc_base_prepare_shader(const opengl_tex_converter_t *tc,
     if(tc->uAlphaBlendParams.fitToDisplay != -1) {
         bool bFitToDisplay = var_InheritBool(tc->gl, "alpha-blend-fit-to-display");
         tc->vt->Uniform1i(tc->uAlphaBlendParams.fitToDisplay, (int)bFitToDisplay);
+    }
+
+    if(tc->uAlphaBlendParams.showDivider != -1) {
+        bool bShowDivider = var_InheritBool(tc->gl, "alpha-blend-show-divider");
+        tc->vt->Uniform1i(tc->uAlphaBlendParams.showDivider, (int)bShowDivider);
+    }
+
+    if(tc->uAlphaBlendParams.enableBlend != -1) {
+        bool bEnableBlend = var_InheritBool(tc->gl, "alpha-blend-enable-blend");
+        tc->vt->Uniform1i(tc->uAlphaBlendParams.enableBlend, (int)bEnableBlend);
     }
 
     if (tc->tex_target == GL_TEXTURE_RECTANGLE)
@@ -961,15 +973,26 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
     ADD("uniform float mixRatioFront;\n");
     ADD("uniform float mixRatioRear;\n");
     ADD("uniform int fitToDisplay;\n");
+    ADD("uniform int showDivider;\n");
+    ADD("uniform int enableBlend;\n");
     ADD("const vec3 border = vec3(0.0, 0.5, 1.0);\n");
-    ADD("const float v_divider = 0.002;\n");
     // In order to retain same line width, we assume that the screen has 16:9 aspect ratio
     // So h_divider wil be v_divider * 9 / 16, but D1 resolution has 4:3 resolution, so will be some error
     // FIXME(aiden): need to consider screen's aspect ratio
-    ADD("float h_divider = v_divider * 9.0 / 16.0;\n");
+    ADD("const float v_divider_default = 0.002;\n");
+    ADD("const float h_divider_default = v_divider_default * 9.0 / 16.0;\n");
 
     ADD("vec3 getLSourceCoord(vec2 pt) {                                    \n"
+        "   if(enableBlend == 0) {                                          \n"
+        "       return vec3(pt, 1.0);                                       \n"
+        "   }                                                               \n"
         "   float alpha = 1.0;                                              \n"
+        "   float v_divider = 0.0;                                          \n"
+        "   float h_divider = 0.0;                                          \n"
+        "   if(showDivider == 1) {                                          \n"
+        "       v_divider = v_divider_default;                              \n"
+        "       h_divider = h_divider_default;                              \n"
+        "   }                                                               \n"
         "   if(pt.y < border.y - v_divider) {                               \n"
                 // line padding(along to Y)
         "       if(mixRatioFront == 0.0 && pt.x > border.y - h_divider) { return vec3(pt, 0.0); }\n"
@@ -1018,7 +1041,16 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
         "                                                                   \n"
        );
     ADD("vec3 getRSourceCoord(vec2 pt) {                                    \n"
+        "   if(enableBlend == 0) {                                          \n"
+        "       return vec3(pt, 1.0);                                       \n"
+        "   }                                                               \n"
         "   float alpha = 1.0;                                              \n"
+        "   float v_divider = 0.0;                                          \n"
+        "   float h_divider = 0.0;                                          \n"
+        "   if(showDivider == 1) {                                          \n"
+        "       v_divider = v_divider_default;                              \n"
+        "       h_divider = h_divider_default;                              \n"
+        "   }                                                               \n"
         "   if(pt.y < border.y - v_divider) {                               \n"
                 // line padding(along to Y)
         "       if(mixRatioFront == 0.0 && pt.x < border.y + h_divider) { return vec3(pt, 0.0); }\n"
