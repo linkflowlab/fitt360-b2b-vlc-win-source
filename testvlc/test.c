@@ -10,6 +10,10 @@ int main(int argc, char **argv)
     libvlc_media_t *m;
 
 	static const char* const args[] = {
+        "--vout", "mygl",
+        "--stitching-projection",
+//        "--stitching-ratio-front", "0.5",
+//        "--no-stitching-fit-to-display",
 //		"--video-filter", "stitching"
 	};
 
@@ -30,8 +34,9 @@ int main(int argc, char **argv)
     // play the media_player
     libvlc_media_player_play(mp);
 
-	// test hand-made APIs
+    // test hand-made APIs
 
+#if 0 //stitching video filter test
     // 0. API 1
     libvlc_set_video_filter(mp, "stitching", true);
     sleep(5);
@@ -73,7 +78,41 @@ int main(int argc, char **argv)
     libvlc_media_player_release(mp);
 
     libvlc_release(inst);
+#else // alpha blending test
+    sleep(5);
+/*
+    float k = 0.0;
+    while(true) {
+        libvlc_media_player_set_option_float(mp, "stitching-ratio-front", k);
+        float oo = libvlc_media_player_get_option_float(mp, "stitching-ratio-front");
+        printf("stitching-ratio-front: %f\n", oo);
+        k += 0.001;
+        usleep(100000);
+    }
+    */
 
+    libvlc_media_player_set_option_float(mp, "stitching-ratio-front", 0.25);
+    float aa = libvlc_media_player_get_option_float(mp, "stitching-ratio-front");
+    printf("stitching-ratio-front: %f\n", aa);
+    sleep(5);
+
+    libvlc_media_player_set_option_float(mp, "stitching-ratio-rear", 0.25);
+    float bb = libvlc_media_player_get_option_float(mp, "stitching-ratio-rear");
+    printf("stitching-ratio-front: %f\n", bb);
+    sleep(5);
+
+    libvlc_media_player_set_option_bool(mp, "stitching-fit-to-display", false);
+    bool cc = libvlc_media_player_get_option_bool(mp, "stitching-fit-to-display");
+    printf("stitching-fit-to-display: %s\n", (cc == true) ? "true" : "false");
+    sleep(5);
+
+    libvlc_media_player_set_option_bool(mp, "stitching-fit-to-display", true);
+    bool dd = libvlc_media_player_get_option_bool(mp, "stitching-fit-to-display");
+    printf("stitching-fit-to-display: %s\n", (dd == true) ? "true" : "false");
+    sleep(5);
+
+    sleep(10000);
+#endif
 
     return 0;
 }
