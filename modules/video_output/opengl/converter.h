@@ -319,6 +319,13 @@ struct opengl_tex_converter_t
         GLint FillColor;
         GLint *pl_vars; /* for pl_sh_res */
     } uloc;
+
+    struct {
+        GLint mixRatioFront; // mixture ratio between front cameras(0.0 ~ 0.25, 0.25 to whole overlap)
+        GLint mixRatioRear;  // mixture ratio between rear cameras(0.0 ~ 0.25, 0.25 to whole overlap)
+        GLint fitToDisplay;       // fit alpha blended image to display width
+    } uStitchingParams;
+
     bool yuv_color;
     GLfloat yuv_coefficients[16];
 

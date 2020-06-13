@@ -357,6 +357,10 @@ tc_base_fetch_locations(opengl_tex_converter_t *tc, GLuint program)
     if (tc->uloc.FillColor == -1)
         return VLC_EGENERIC;
 
+    tc->uStitchingParams.mixRatioFront = tc->vt->GetUniformLocation(program, "mixRatioFront");
+    tc->uStitchingParams.mixRatioRear  = tc->vt->GetUniformLocation(program, "mixRatioRear");
+    tc->uStitchingParams.fitToDisplay  = tc->vt->GetUniformLocation(program, "fitToDisplay");
+
 #ifdef HAVE_LIBPLACEBO
     const struct pl_shader_res *res = tc->pl_sh_res;
     for (int i = 0; res && i < res->num_variables; i++) {
@@ -382,6 +386,21 @@ tc_base_prepare_shader(const opengl_tex_converter_t *tc,
         tc->vt->Uniform1i(tc->uloc.Texture[i], i);
 
     tc->vt->Uniform4f(tc->uloc.FillColor, 1.0f, 1.0f, 1.0f, alpha);
+
+    if(tc->uStitchingParams.mixRatioFront != -1) {
+        float frontMix = var_InheritFloat(tc->gl, "stitching-ratio-front");
+        tc->vt->Uniform1f(tc->uStitchingParams.mixRatioFront, frontMix);
+    }
+
+    if(tc->uStitchingParams.mixRatioRear != -1) {
+        float rearMix = var_InheritFloat(tc->gl, "stitching-ratio-rear");
+        tc->vt->Uniform1f(tc->uStitchingParams.mixRatioRear, rearMix);
+    }
+
+    if(tc->uStitchingParams.fitToDisplay != -1) {
+        bool bFitToDisplay = var_InheritBool(tc->gl, "stitching-fit-to-display");
+        tc->vt->Uniform1i(tc->uStitchingParams.fitToDisplay, (int)bFitToDisplay);
+    }
 
     if (tc->tex_target == GL_TEXTURE_RECTANGLE)
     {
@@ -939,19 +958,16 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
 
     ADD("uniform vec4 FillColor;\n\n");
 
-    float frontMix = var_InheritFloat(tc->gl, "stitching-ratio-front");
-    float rearMix = var_InheritFloat(tc->gl, "stitching-ratio-rear");
-
-    ADDF("const float mixRatioFront = %.3f;\n", frontMix);
-    ADDF("const float mixRatioRear  = %.3f;\n", rearMix);
+    ADD("uniform float mixRatioFront;\n");
+    ADD("uniform float mixRatioRear;\n");
+    ADD("uniform int fitToDisplay;\n");
     ADD("const vec3 border = vec3(0.0, 0.5, 1.0);\n");
-    ADD("const int scaling = 1;\n");
 
     ADD("vec3 getLSourceCoord(vec2 pt) {                                    \n"
         "   float alpha = 1.0;                                              \n"
         "   if(pt.y < border.y) {                                           \n"
                 // Left front
-        "       if(scaling != 1) pt.x -= mixRatioFront;                     \n"
+        "       if(fitToDisplay != 1) pt.x -= mixRatioFront;                \n"
         "       else {                                                      \n"
         "           float scale = (border.y + mixRatioFront) / border.y;    \n"
         "           pt.x = ((pt.x - mixRatioFront)) / scale + (mixRatioFront / scale);\n"
@@ -968,7 +984,7 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         "       }                                                           \n"
         "   } else {                                                        \n"
                 // Left Rear
-        "       if(scaling != 1) pt.x += (border.y - mixRatioRear);         \n"
+        "       if(fitToDisplay != 1) pt.x += (border.y - mixRatioRear);    \n"
         "       else {                                                      \n"
         "           float scale = (border.y + mixRatioRear) / border.y;     \n"
         "           pt.x = (pt.x - mixRatioRear) / scale + (mixRatioRear / scale) + border.y;\n"
@@ -993,7 +1009,7 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         "   float alpha = 1.0;                                              \n"
         "   if(pt.y < border.y) {                                           \n"
                 // Right front
-        "       if(scaling != 1) pt.x += mixRatioFront;                     \n"
+        "       if(fitToDisplay != 1) pt.x += mixRatioFront;                \n"
         "       else {                                                      \n"
         "           float scale = (border.y + mixRatioFront) / border.y;    \n"
         "           pt.x = ((pt.x + mixRatioFront)) / scale + (mixRatioFront / scale);\n"
@@ -1010,7 +1026,7 @@ opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum t
         "       }                                                           \n"
         "   } else {                                                        \n"
                 // Right Rear
-        "       if(scaling != 1) pt.x -= (border.y - mixRatioRear);         \n"
+        "       if(fitToDisplay != 1) pt.x -= (border.y - mixRatioRear);    \n"
         "       else {                                                      \n"
         "           float scale = (border.y + mixRatioRear) / border.y;     \n"
         "           pt.x = (pt.x + mixRatioRear) / scale + (mixRatioRear / scale) - border.y;\n"
