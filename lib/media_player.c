@@ -793,6 +793,11 @@ libvlc_media_player_new( libvlc_instance_t *instance )
         var_SetChecked(mp, "http-cookies", VLC_VAR_ADDRESS, cookies);
     }
 
+    /* alpha blending */
+    var_Create(mp, "stitching-ratio-front", VLC_VAR_FLOAT|VLC_VAR_DOINHERIT);
+    var_Create(mp, "stitching-ratio-rear", VLC_VAR_FLOAT|VLC_VAR_DOINHERIT);
+    var_Create(mp, "stitching-fit-to-display", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
+
     mp->p_md = NULL;
     mp->state = libvlc_NothingSpecial;
     mp->p_libvlc_instance = instance;
@@ -2158,4 +2163,48 @@ int libvlc_media_player_record_stop( libvlc_media_player_t *p_mi )
 
     vlc_object_release( p_input_thread );
     return 0;
+}
+
+int libvlc_media_player_set_option_string( libvlc_media_player_t *p_mi, const char* option, const char* value )
+{
+    var_SetString (p_mi, option, value);
+    return 0;
+}
+
+const char* libvlc_media_player_get_option_string( libvlc_media_player_t *p_mi, const char* option )
+{
+    return var_GetString (p_mi, option);
+}
+
+int libvlc_media_player_set_option_float( libvlc_media_player_t *p_mi, const char* option, float value )
+{
+    var_SetFloat (p_mi, option, value);
+    return 0;
+}
+
+float libvlc_media_player_get_option_float( libvlc_media_player_t *p_mi, const char* option )
+{
+    return var_GetFloat (p_mi, option);
+}
+
+int libvlc_media_player_set_option_integer( libvlc_media_player_t *p_mi, const char* option, int value )
+{
+    var_SetInteger (p_mi, option, value);
+    return 0;
+}
+
+int libvlc_media_player_get_option_interger( libvlc_media_player_t *p_mi, const char* option )
+{
+    return var_GetInteger (p_mi, option);
+}
+
+int libvlc_media_player_set_option_bool( libvlc_media_player_t *p_mi, const char* option, bool value )
+{
+    var_SetBool (p_mi, option, value);
+    return 0;
+}
+
+bool libvlc_media_player_get_option_bool( libvlc_media_player_t *p_mi, const char* option )
+{
+    return var_GetBool (p_mi, option);
 }

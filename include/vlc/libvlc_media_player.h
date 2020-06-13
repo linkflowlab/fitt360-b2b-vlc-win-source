@@ -2259,6 +2259,14 @@ enum libvlc_mouse_event_option {
 
 LIBVLC_API void libvlc_send_mouse_event(libvlc_media_player_t *p_mi, int VoutID, unsigned type, int btn, int x, int y);
 
+LIBVLC_API int libvlc_media_player_set_option_string( libvlc_media_player_t *p_mi, const char* option, const char* value );
+LIBVLC_API const char* libvlc_media_player_get_option_string( libvlc_media_player_t *p_mi, const char* option );
+LIBVLC_API int libvlc_media_player_set_option_float( libvlc_media_player_t *p_mi, const char* option, float value );
+LIBVLC_API float libvlc_media_player_get_option_float( libvlc_media_player_t *p_mi, const char* option );
+LIBVLC_API int libvlc_media_player_set_option_integer( libvlc_media_player_t *p_mi, const char* option, int value );
+LIBVLC_API int libvlc_media_player_get_option_interger( libvlc_media_player_t *p_mi, const char* option );
+LIBVLC_API int libvlc_media_player_set_option_bool( libvlc_media_player_t *p_mi, const char* option, bool value );
+LIBVLC_API bool libvlc_media_player_get_option_bool( libvlc_media_player_t *p_mi, const char* option );
 
 /**
  * Can the media player record the current media?
