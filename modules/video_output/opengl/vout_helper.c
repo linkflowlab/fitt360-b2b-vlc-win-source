@@ -172,7 +172,7 @@ struct vout_display_opengl_t {
 
     /* Misc */
     bool equirectangularProjectionEnabled;
-    bool stitchingProjectionEnabled;
+    bool alphaBlendProjectionEnabled;
 };
 
 static const vlc_fourcc_t gl_subpicture_chromas[] = {
@@ -275,7 +275,7 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  video_projection_mode_t projection_mode,
                                  struct prgm *prgm)
 {
-    if(vgl->stitchingProjectionEnabled) {
+    if(vgl->alphaBlendProjectionEnabled) {
         memcpy(prgm->var.ProjectionMatrix, identity, sizeof(identity));
         memcpy(prgm->var.ZRotMatrix, identity, sizeof(identity));
         memcpy(prgm->var.YRotMatrix, identity, sizeof(identity));
@@ -620,9 +620,9 @@ opengl_init_program(vout_display_opengl_t *vgl, struct prgm *prgm,
     tc->gl = vgl->gl;
     tc->vt = &vgl->vt;
     tc->b_dump_shaders = b_dump_shaders;
-    if(vgl->stitchingProjectionEnabled && !subpics) {
-        tc->pf_fragment_shader_init = opengl_fragment_shader_init_impl_for_stitch;
-        msg_Dbg(tc->gl,"AIDEN: shader: opengl_fragment_shader_init_impl_for_stitch");
+    if(vgl->alphaBlendProjectionEnabled && !subpics) {
+        tc->pf_fragment_shader_init = opengl_fragment_shader_init_impl_for_alpha_blend;
+        msg_Dbg(tc->gl,"AIDEN: shader: opengl_fragment_shader_init_impl_for_alpha_blend");
     }
     else {
         tc->pf_fragment_shader_init = opengl_fragment_shader_init_impl;
@@ -760,12 +760,12 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->gl = gl;
 
     bool enableEquirectangular = var_InheritBool(gl, "equirectangular-projection");
-    bool enableStitching = var_InheritBool(gl, "stitching-projection");
+    bool enableAlphaBlend = var_InheritBool(gl, "alpha-blend-projection");
     msg_Dbg(gl, "AIDEN: equirectangular projection enabled: %s", enableEquirectangular ? "true" : "false");
-    msg_Dbg(gl, "AIDEN: stitching projection enabled: %s", enableStitching ? "true" : "false");
+    msg_Dbg(gl, "AIDEN: alpha blend projection enabled: %s", enableAlphaBlend ? "true" : "false");
 
     vgl->equirectangularProjectionEnabled = enableEquirectangular;
-    vgl->stitchingProjectionEnabled = enableStitching;
+    vgl->alphaBlendProjectionEnabled = enableAlphaBlend;
 
 #if defined(USE_OPENGL_ES2) || defined(HAVE_GL_CORE_SYMBOLS)
 #define GET_PROC_ADDR_CORE(name) vgl->vt.name = gl##name
@@ -994,7 +994,7 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->region = NULL;
     vgl->pool = NULL;
 
-    if (!vgl->stitchingProjectionEnabled && vgl->equirectangularProjectionEnabled && (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
+    if (!vgl->alphaBlendProjectionEnabled && vgl->equirectangularProjectionEnabled && (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
      && vout_display_opengl_SetViewpoint(vgl, viewpoint) != VLC_SUCCESS))
     {
         vout_display_opengl_Delete(vgl);
@@ -1551,7 +1551,7 @@ static int SetupCoords(vout_display_opengl_t *vgl,
                                left, top, right, bottom);
         break;
     case PROJECTION_MODE_EQUIRECTANGULAR:
-        if(!vgl->stitchingProjectionEnabled && vgl->equirectangularProjectionEnabled) {
+        if(!vgl->alphaBlendProjectionEnabled && vgl->equirectangularProjectionEnabled) {
             i_ret = BuildSphere(vgl->prgm->tc->tex_count,
                     &vertexCoord, &textureCoord, &nbVertices,
                     &indices, &nbIndices,
@@ -1838,7 +1838,7 @@ int vout_display_opengl_EnableEquirectangularProjection(vout_display_opengl_t *v
 	vgl->equirectangularProjectionEnabled = enable;
 }
 
-int vout_display_opengl_EnableStitchingProjection(vout_display_opengl_t *vgl, bool enable) {
-    vgl->stitchingProjectionEnabled = enable;
+int vout_display_opengl_EnableAlphaBlendProjection(vout_display_opengl_t *vgl, bool enable) {
+    vgl->alphaBlendProjectionEnabled = enable;
 }
 

@@ -357,9 +357,9 @@ tc_base_fetch_locations(opengl_tex_converter_t *tc, GLuint program)
     if (tc->uloc.FillColor == -1)
         return VLC_EGENERIC;
 
-    tc->uStitchingParams.mixRatioFront = tc->vt->GetUniformLocation(program, "mixRatioFront");
-    tc->uStitchingParams.mixRatioRear  = tc->vt->GetUniformLocation(program, "mixRatioRear");
-    tc->uStitchingParams.fitToDisplay  = tc->vt->GetUniformLocation(program, "fitToDisplay");
+    tc->uAlphaBlendParams.mixRatioFront = tc->vt->GetUniformLocation(program, "mixRatioFront");
+    tc->uAlphaBlendParams.mixRatioRear  = tc->vt->GetUniformLocation(program, "mixRatioRear");
+    tc->uAlphaBlendParams.fitToDisplay  = tc->vt->GetUniformLocation(program, "fitToDisplay");
 
 #ifdef HAVE_LIBPLACEBO
     const struct pl_shader_res *res = tc->pl_sh_res;
@@ -387,19 +387,19 @@ tc_base_prepare_shader(const opengl_tex_converter_t *tc,
 
     tc->vt->Uniform4f(tc->uloc.FillColor, 1.0f, 1.0f, 1.0f, alpha);
 
-    if(tc->uStitchingParams.mixRatioFront != -1) {
-        float frontMix = var_InheritFloat(tc->gl, "stitching-ratio-front");
-        tc->vt->Uniform1f(tc->uStitchingParams.mixRatioFront, frontMix);
+    if(tc->uAlphaBlendParams.mixRatioFront != -1) {
+        float frontMix = var_InheritFloat(tc->gl, "alpha-blend-ratio-front");
+        tc->vt->Uniform1f(tc->uAlphaBlendParams.mixRatioFront, frontMix);
     }
 
-    if(tc->uStitchingParams.mixRatioRear != -1) {
-        float rearMix = var_InheritFloat(tc->gl, "stitching-ratio-rear");
-        tc->vt->Uniform1f(tc->uStitchingParams.mixRatioRear, rearMix);
+    if(tc->uAlphaBlendParams.mixRatioRear != -1) {
+        float rearMix = var_InheritFloat(tc->gl, "alpha-blend-ratio-rear");
+        tc->vt->Uniform1f(tc->uAlphaBlendParams.mixRatioRear, rearMix);
     }
 
-    if(tc->uStitchingParams.fitToDisplay != -1) {
-        bool bFitToDisplay = var_InheritBool(tc->gl, "stitching-fit-to-display");
-        tc->vt->Uniform1i(tc->uStitchingParams.fitToDisplay, (int)bFitToDisplay);
+    if(tc->uAlphaBlendParams.fitToDisplay != -1) {
+        bool bFitToDisplay = var_InheritBool(tc->gl, "alpha-blend-fit-to-display");
+        tc->vt->Uniform1i(tc->uAlphaBlendParams.fitToDisplay, (int)bFitToDisplay);
     }
 
     if (tc->tex_target == GL_TEXTURE_RECTANGLE)
@@ -817,7 +817,7 @@ opengl_fragment_shader_init_impl(opengl_tex_converter_t *tc, GLenum tex_target,
 }
 
 GLuint
-opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *tc, GLenum tex_target,
+opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLenum tex_target,
                                  vlc_fourcc_t chroma, video_color_space_t yuv_space)
 {
     const char *swizzle_per_tex[PICTURE_PLANE_MAX] = { NULL, };

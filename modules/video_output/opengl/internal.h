@@ -28,7 +28,7 @@ opengl_fragment_shader_init_impl(opengl_tex_converter_t *,
                                  GLenum, vlc_fourcc_t, video_color_space_t);
 
 GLuint
-opengl_fragment_shader_init_impl_for_stitch(opengl_tex_converter_t *,
+opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *,
                                  GLenum, vlc_fourcc_t, video_color_space_t);
 
 int

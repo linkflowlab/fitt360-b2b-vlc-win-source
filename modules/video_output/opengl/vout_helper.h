@@ -230,6 +230,6 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
 // AIDEN: Added for New functions
 int vout_display_opengl_EnableEquirectangularProjection(vout_display_opengl_t *vgl, bool enable);
-int vout_display_opengl_EnableStitchingProjection(vout_display_opengl_t *vgl, bool enable);
+int vout_display_opengl_EnableAlphaBlendProjection(vout_display_opengl_t *vgl, bool enable);
 
 #endif
