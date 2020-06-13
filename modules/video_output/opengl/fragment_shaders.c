@@ -962,10 +962,17 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
     ADD("uniform float mixRatioRear;\n");
     ADD("uniform int fitToDisplay;\n");
     ADD("const vec3 border = vec3(0.0, 0.5, 1.0);\n");
+    ADD("const float v_divider = 0.002;\n");
+    // In order to retain same line width, we assume that the screen has 16:9 aspect ratio
+    // So h_divider wil be v_divider * 9 / 16, but D1 resolution has 4:3 resolution, so will be some error
+    // FIXME(aiden): need to consider screen's aspect ratio
+    ADD("float h_divider = v_divider * 9.0 / 16.0;\n");
 
     ADD("vec3 getLSourceCoord(vec2 pt) {                                    \n"
         "   float alpha = 1.0;                                              \n"
-        "   if(pt.y < border.y) {                                           \n"
+        "   if(pt.y < border.y - v_divider) {                               \n"
+                // line padding(along to Y)
+        "       if(mixRatioFront == 0.0 && pt.x > border.y - h_divider) { return vec3(pt, 0.0); }\n"
                 // Left front
         "       if(fitToDisplay != 1) pt.x -= mixRatioFront;                \n"
         "       else {                                                      \n"
@@ -982,7 +989,9 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
         "               alpha = 1.0 - (pt.x - start) * (1.0 / overlap);     \n"
         "           }                                                       \n"
         "       }                                                           \n"
-        "   } else {                                                        \n"
+        "   } else if(pt.y > border.y + v_divider) {                        \n"
+                // line padding(along to Y)
+        "       if(mixRatioRear == 0.0 && pt.x > border.y - h_divider) { return vec3(pt, 0.0); }\n"
                 // Left Rear
         "       if(fitToDisplay != 1) pt.x += (border.y - mixRatioRear);    \n"
         "       else {                                                      \n"
@@ -999,6 +1008,9 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
         "               alpha = 1.0 - (pt.x - start) * (1.0 / overlap);     \n"
         "           }                                                       \n"
         "       }                                                           \n"
+        "   } else {                                                        \n"
+                // line padding(along to X)
+        "       alpha = 0.0;                                                \n"
         "   }                                                               \n"
         "                                                                   \n"
         "   return vec3(pt, alpha);                                         \n"
@@ -1007,7 +1019,9 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
        );
     ADD("vec3 getRSourceCoord(vec2 pt) {                                    \n"
         "   float alpha = 1.0;                                              \n"
-        "   if(pt.y < border.y) {                                           \n"
+        "   if(pt.y < border.y - v_divider) {                               \n"
+                // line padding(along to Y)
+        "       if(mixRatioFront == 0.0 && pt.x < border.y + h_divider) { return vec3(pt, 0.0); }\n"
                 // Right front
         "       if(fitToDisplay != 1) pt.x += mixRatioFront;                \n"
         "       else {                                                      \n"
@@ -1024,7 +1038,9 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
         "               alpha = (pt.x - start) * (1.0 / overlap);           \n"
         "           }                                                       \n"
         "       }                                                           \n"
-        "   } else {                                                        \n"
+        "   } else if(pt.y > border.y + v_divider) {                        \n"
+                // line padding(along to Y)
+        "       if(mixRatioRear == 0.0 && pt.x < border.y + h_divider) { return vec3(pt, 0.0); }\n"
                 // Right Rear
         "       if(fitToDisplay != 1) pt.x -= (border.y - mixRatioRear);    \n"
         "       else {                                                      \n"
@@ -1041,6 +1057,9 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
         "               alpha = (pt.x - start) * (1.0 / overlap);           \n"
         "           }                                                       \n"
         "       }                                                           \n"
+        "   } else {                                                        \n"
+                // line padding(along to X)
+        "       alpha = 0.0;                                                \n"
         "   }                                                               \n"
         "                                                                   \n"
         "   return vec3(pt, alpha);                                         \n"
