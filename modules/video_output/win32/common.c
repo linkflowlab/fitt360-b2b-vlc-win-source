@@ -202,10 +202,10 @@ void UpdateRects(vout_display_t *vd,
 
 #if (defined(MODULE_NAME_IS_glwin32_alpha_blend))
 	/* Reverse vertical alignment as the GL tex are Y inverted */
-	if (place_cfg.align.vertical == VOUT_DISPLAY_ALIGN_TOP)
+/*	if (place_cfg.align.vertical == VOUT_DISPLAY_ALIGN_TOP)
 		place_cfg.align.vertical = VOUT_DISPLAY_ALIGN_BOTTOM;
 	else if (place_cfg.align.vertical == VOUT_DISPLAY_ALIGN_BOTTOM)
-		place_cfg.align.vertical = VOUT_DISPLAY_ALIGN_TOP;
+		place_cfg.align.vertical = VOUT_DISPLAY_ALIGN_TOP;*/
 #endif
 
     vout_display_place_t place;
