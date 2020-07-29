@@ -93,7 +93,8 @@ static void Close( vlc_object_t * );
 #define FRAME_BUFFER_SIZE_LONGTEXT N_("RTSP start frame buffer size of the video " \
     "track, can be increased in case of broken pictures due " \
     "to too small buffer.")
-#define DEFAULT_FRAME_BUFFER_SIZE 250000
+//#define DEFAULT_FRAME_BUFFER_SIZE 250000
+#define DEFAULT_FRAME_BUFFER_SIZE 800000
 
 vlc_module_begin ()
     set_description( N_("RTP/RTSP/SDP demuxer (using Live555)" ) )
@@ -353,7 +354,7 @@ static int  Open ( vlc_object_t *p_this )
         return VLC_ENOMEM;
     }
 
-    msg_Dbg( p_demux, "version " LIVEMEDIA_LIBRARY_VERSION_STRING );
+    msg_Err( p_demux, "version " LIVEMEDIA_LIBRARY_VERSION_STRING );
 
     p_sys->capabilities = CAPS_DEFAULT;
     if( var_GetBool( p_demux, "rtsp-kasenna" ) ||
@@ -665,7 +666,7 @@ describe:
         int i_code = p_sys->i_live555_ret;
         if( i_code == 401 )
         {
-            msg_Dbg( p_demux, "authentication failed. do not retry." );
+            msg_Err( p_demux, "authentication failed. do not retry." );
 
 	    // do not re-try with stored password. issue #272
             /*
@@ -683,7 +684,7 @@ describe:
         else if( i_code > 0 && i_code != 404 && !var_GetBool( p_demux, "rtsp-http" ) )
         {
             /* Perhaps a firewall is being annoying. Try HTTP tunneling mode */
-            msg_Dbg( p_demux, "we will now try HTTP tunneling mode" );
+            msg_Err( p_demux, "we will now try HTTP tunneling mode" );
             var_SetBool( p_demux, "rtsp-http", true );
             if( p_sys->rtsp ) RTSPClient::close( p_sys->rtsp );
             p_sys->rtsp = NULL;
@@ -692,10 +693,10 @@ describe:
         else
         {
             if( i_code == 0 )
-                msg_Dbg( p_demux, "connection timeout" );
+                msg_Err( p_demux, "connection timeout" );
             else
             {
-                msg_Dbg( p_demux, "connection error %d", i_code );
+                msg_Err( p_demux, "connection error %d", i_code );
                 if( i_code == 403 )
                     vlc_dialog_display_error( p_demux, _("RTSP connection failed"),
                         _("Access to the stream is denied by the server configuration.") );
@@ -775,6 +776,7 @@ static int SessionsSetup( demux_t *p_demux )
             if( i_var_buf_size > 0 )
                 i_frame_buffer = i_var_buf_size;
             i_receive_buffer = 2000000;
+            //i_receive_buffer = 10000000;
         }
         else if( !strcmp( sub->mediumName(), "text" ) )
             ;
@@ -782,7 +784,7 @@ static int SessionsSetup( demux_t *p_demux )
 
         if( strcasestr( sub->codecName(), "REAL" ) )
         {
-            msg_Info( p_demux, "real codec detected, using real-RTSP instead" );
+            msg_Err( p_demux, "real codec detected, using real-RTSP instead" );
             p_sys->b_real = true; /* This is a problem, we'll handle it later */
             continue;
         }
@@ -800,7 +802,7 @@ static int SessionsSetup( demux_t *p_demux )
 
         if( !bInit )
         {
-            msg_Warn( p_demux, "RTP subsession '%s/%s' failed (%s)",
+            msg_Err( p_demux, "RTP subsession '%s/%s' failed (%s)",
                       sub->mediumName(), sub->codecName(),
                       p_sys->env->getResultMsg() );
         }
@@ -817,7 +819,7 @@ static int SessionsSetup( demux_t *p_demux )
                 /* Increase the RTP reorder timebuffer just a bit */
                 sub->rtpSource()->setPacketReorderingThresholdTime(thresh);
             }
-            msg_Dbg( p_demux, "RTP subsession '%s/%s'", sub->mediumName(),
+            msg_Err( p_demux, "RTP subsession '%s/%s'", sub->mediumName(),
                      sub->codecName() );
 
             /* Issue the SETUP */
@@ -1030,7 +1032,7 @@ static int SessionsSetup( demux_t *p_demux )
                         tk->fmt.p_extra = p_extra;
                     }
                     else
-                        msg_Warn( p_demux,"Missing or unsupported vorbis header." );
+                        msg_Err( p_demux,"Missing or unsupported vorbis header." );
                 }
                 else if( !strcmp( sub->codecName(), "OPUS" ) )
                 {
@@ -1182,7 +1184,7 @@ static int SessionsSetup( demux_t *p_demux )
                         tk->fmt.p_extra = p_extra;
                     }
                     else
-                        msg_Warn( p_demux,"Missing or unsupported theora header." );
+                        msg_Err( p_demux,"Missing or unsupported theora header." );
                 }
             }
             else if( !strcmp( sub->mediumName(), "text" ) )
@@ -1244,7 +1246,7 @@ static int SessionsSetup( demux_t *p_demux )
     p_sys->f_npt_length = p_sys->ms->playEndTime();
 
     /* */
-    msg_Dbg( p_demux, "setup start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
+    msg_Err( p_demux, "setup start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
 
     /* */
     p_sys->b_no_data = true;
@@ -1277,7 +1279,7 @@ static int Play( demux_t *p_demux )
         int timeout = p_sys->rtsp->sessionTimeoutParameter();
         if( timeout <= 2 )
             timeout = 60; /* default value from RFC2326 */
-        msg_Dbg( p_demux, "We have a timeout of %d seconds", timeout );
+        msg_Err( p_demux, "We have a timeout of %d seconds", timeout );
 
         vlc_tick_t interval = vlc_tick_from_sec(timeout - 2);
         vlc_timer_schedule( p_sys->timer, false, interval, interval);
@@ -1289,7 +1291,7 @@ static int Play( demux_t *p_demux )
     if( p_sys->ms->playEndTime() > 0 )
         p_sys->f_npt_length = p_sys->ms->playEndTime();
 
-    msg_Dbg( p_demux, "play start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
+    msg_Err( p_demux, "play start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
     return VLC_SUCCESS;
 }
 
@@ -1494,7 +1496,7 @@ static int Demux( demux_t *p_demux )
 
         if( !b_rtsp_tcp && p_sys->rtsp && p_sys->ms )
         {
-            msg_Warn( p_demux, "no data received in 10s. Switching to TCP" );
+            msg_Err( p_demux, "no data received in 10s. Switching to TCP" );
             if( RollOverTcp( p_demux ) )
             {
                 msg_Err( p_demux, "TCP rollover failed, aborting" );
@@ -1509,7 +1511,7 @@ static int Demux( demux_t *p_demux )
              ( p_sys->i_no_data_ti > 34 ) )
     {
         /* EOF ? */
-        msg_Warn( p_demux, "no data received in 10s, eof ?" );
+        msg_Err( p_demux, "no data received in 10s, eof ?" );
         return 0;
     }
     return p_sys->b_error ? 0 : 1;
@@ -1619,7 +1621,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
                 if( p_sys->ms->playEndTime() > 0 )
                     p_sys->f_npt_length = p_sys->ms->playEndTime();
 
-                msg_Dbg( p_demux, "seek start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
+                msg_Err( p_demux, "seek start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
                 return VLC_SUCCESS;
             }
             return VLC_EGENERIC;
@@ -1706,7 +1708,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
             p_sys->f_npt = 0.0;
 
             *pi_int = (int)( INPUT_RATE_DEFAULT / p_sys->ms->scale() );
-            msg_Dbg( p_demux, "PLAY with new Scale %0.2f (%d)", p_sys->ms->scale(), (*pi_int) );
+            msg_Err( p_demux, "PLAY with new Scale %0.2f (%d)", p_sys->ms->scale(), (*pi_int) );
             return VLC_SUCCESS;
         }
 
@@ -1757,7 +1759,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
             if( p_sys->ms->playEndTime() )
                 p_sys->f_npt_length = p_sys->ms->playEndTime();
 
-            msg_Dbg( p_demux, "pause start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
+            msg_Err( p_demux, "pause start: %f stop:%f", p_sys->f_npt_start, p_sys->f_npt_length );
 
             return VLC_SUCCESS;
         }
@@ -1877,7 +1879,7 @@ static block_t *StreamParseAsf( demux_t *p_demux, live_track_t *tk,
 
         if( i_header_size > i_size )
         {
-            msg_Warn( p_demux, "Invalid header size" );
+            msg_Err( p_demux, "Invalid header size" );
             break;
         }
 
@@ -1942,7 +1944,7 @@ static void StreamRead( void *p_private, unsigned int i_size,
     demux_sys_t *p_sys = (demux_sys_t *)p_demux->p_sys;
     block_t        *p_block;
 
-    //msg_Dbg( p_demux, "pts: %d", pts.tv_sec );
+    //msg_Dbg( p_demux, "pts: %ld", pts.tv_sec );
 
     vlc_tick_t i_pts = vlc_tick_from_timeval( &pts );
 
@@ -2026,12 +2028,12 @@ static void StreamRead( void *p_private, unsigned int i_size,
         if( tk->i_buffer < 2000000 )
         {
             void *p_tmp;
-            msg_Dbg( p_demux, "lost %d bytes", i_truncated_bytes );
-            msg_Dbg( p_demux, "increasing buffer size to %d", tk->i_buffer * 2 );
+            msg_Err( p_demux, "lost %d bytes", i_truncated_bytes );
+            msg_Err( p_demux, "increasing buffer size to %d", tk->i_buffer * 2 );
             p_tmp = realloc( tk->p_buffer, tk->i_buffer * 2 );
             if( p_tmp == NULL )
             {
-                msg_Warn( p_demux, "realloc failed" );
+                msg_Err( p_demux, "realloc failed" );
             }
             else
             {
@@ -2074,9 +2076,9 @@ static void StreamRead( void *p_private, unsigned int i_size,
     else if( tk->fmt.i_codec == VLC_CODEC_H264 || tk->fmt.i_codec == VLC_CODEC_HEVC )
     {
         if( tk->fmt.i_codec == VLC_CODEC_H264 && (tk->p_buffer[0] & 0x1f) >= 24 )
-            msg_Warn( p_demux, "unsupported NAL type for H264" );
+            msg_Err( p_demux, "unsupported NAL type for H264" );
         else if( tk->fmt.i_codec == VLC_CODEC_HEVC && ((tk->p_buffer[0] & 0x7e)>>1) >= 48 )
-            msg_Warn( p_demux, "unsupported NAL type for H265" );
+            msg_Err( p_demux, "unsupported NAL type for H265" );
 
         /* Normal NAL type */
         if( (p_block = block_Alloc( i_size + 4 )) )
@@ -2104,7 +2106,7 @@ static void StreamRead( void *p_private, unsigned int i_size,
     if( !tk->b_rtcp_sync && tk->sub->rtpSource() &&
          tk->sub->rtpSource()->hasBeenSynchronizedUsingRTCP() )
     {
-        msg_Dbg( p_demux, "tk->rtpSource->hasBeenSynchronizedUsingRTCP()" );
+        msg_Err( p_demux, "tk->rtpSource->hasBeenSynchronizedUsingRTCP()" );
         p_sys->b_rtcp_sync = tk->b_rtcp_sync = true;
         if( tk->i_pcr != VLC_TICK_INVALID )
         {
@@ -2205,7 +2207,7 @@ static void StreamClose( void *p_private )
         if( p_sys->track[i]->state == live_track_t::STATE_SELECTED )
             nb_tracks++;
     }
-    msg_Dbg( p_demux, "RTSP track Close, %d track remaining", nb_tracks );
+    msg_Err( p_demux, "RTSP track Close, %d track remaining", nb_tracks );
     if( !nb_tracks )
         p_sys->b_error = true;
 }

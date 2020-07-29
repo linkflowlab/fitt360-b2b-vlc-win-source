@@ -17,8 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
-#define DTSGEN_REORDER_MAX   4 /* should be enough */
+#define DTSGEN_REORDER_MAX   16 /* should be enough */
 #define DTSGEN_HISTORY_COUNT (DTSGEN_REORDER_MAX + 2)
+// If we want to enable the dtsgen log, uncomment below
 //#define DTSGEN_DEBUG
 
 struct dtsgen_t
