@@ -1139,8 +1139,13 @@ opengl_fragment_shader_init_impl_for_alpha_blend(opengl_tex_converter_t *tc, GLe
         }
         else
         {
-            //FIXME(aiden): Need to change the logic according to swizzle case above
-            ADDF(" vec4 color%u = %s(Texture%u, getSourceCoord(%s%u));\n\n", color_idx, lookup, i, coord_name, i);
+            // same as swizzle case above
+            ADDF("  coord_l = getLSourceCoord(%s%u);\n", coord_name, i);
+            ADDF("  coord_r = getRSourceCoord(%s%u);\n", coord_name, i);
+            ADDF("  colors_l = %s(Texture%u, coord_l.xy);\n", lookup, i);
+            ADDF("  colors_r = %s(Texture%u, coord_r.xy);\n", lookup, i);
+            ADD ("  colors = (colors_l * coord_l.z + colors_r * coord_r.z) / (coord_l.z + coord_r.z);\n");
+            ADDF(" vec4 color%u = vec4(colors.xyz, 1);\n\n", color_idx);
             color_idx++;
             assert(color_idx <= PICTURE_PLANE_MAX);
         }
