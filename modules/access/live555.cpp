@@ -1475,8 +1475,10 @@ static int Demux( demux_t *p_demux )
                  i_minpcr > p_sys->i_pcr + PCR_OBS )
         {
             p_sys->i_pcr = __MAX(0, i_minpcr - PCR_OFF);
-            if( p_sys->i_pcr != VLC_TICK_INVALID )
+            if( p_sys->i_pcr != VLC_TICK_INVALID ) {
+                //msg_Err(p_demux, "PCR: %"PRId64"", VLC_TICK_0 + p_sys->i_pcr);
                 es_out_SetPCR( p_demux->out, VLC_TICK_0 + p_sys->i_pcr );
+            }
         }
     }
 
@@ -1944,7 +1946,7 @@ static void StreamRead( void *p_private, unsigned int i_size,
     demux_sys_t *p_sys = (demux_sys_t *)p_demux->p_sys;
     block_t        *p_block;
 
-    //msg_Dbg( p_demux, "pts: %ld", pts.tv_sec );
+    //msg_Dbg( p_demux, "pts: %"PRId64"", pts.tv_sec * 1000000 + pts.tv_usec );
 
     vlc_tick_t i_pts = vlc_tick_from_timeval( &pts );
 
@@ -2149,6 +2151,7 @@ static void StreamRead( void *p_private, unsigned int i_size,
                     case VLC_CODEC_H264:
                     case VLC_CODEC_HEVC:
                         p_block->i_dts = dtsgen_GetDTS( &tk->dtsgen );
+                        //msg_Err(p_demux, "DTS: %"PRId64"", p_block->i_dts);
                         dtsgen_Debug( VLC_OBJECT(p_demux), &tk->dtsgen, p_block->i_dts, p_block->i_pts );
                         break;
                     case VLC_CODEC_VP8:

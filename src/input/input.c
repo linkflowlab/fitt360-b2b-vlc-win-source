@@ -2703,6 +2703,7 @@ static input_source_t *InputSourceNew( input_thread_t *p_input,
         }
 
         demux_Control( in->p_demux, DEMUX_GET_PTS_DELAY, &in->i_pts_delay );
+        msg_Dbg(p_input, "demux pts delay(input) %"PRId64"", in->i_pts_delay);
         if( in->i_pts_delay > INPUT_PTS_DELAY_MAX )
             in->i_pts_delay = INPUT_PTS_DELAY_MAX;
         else if( in->i_pts_delay < 0 )

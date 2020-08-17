@@ -1382,6 +1382,8 @@ static void DecoderProcess( decoder_t *p_dec, block_t *p_block )
             goto error;
 
         vlc_mutex_lock( &p_owner->lock );
+        //msg_Err(p_dec, "pts2 %"PRId64"", p_block->i_pts);
+        //msg_Err(p_dec, "dts2 %"PRId64"", p_block->i_dts);
         DecoderUpdatePreroll( &p_owner->i_preroll_end, p_block );
         vlc_mutex_unlock( &p_owner->lock );
         if( unlikely( p_block->i_flags & BLOCK_FLAG_CORE_PRIVATE_RELOADED ) )

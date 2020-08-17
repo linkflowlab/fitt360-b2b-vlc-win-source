@@ -2628,6 +2628,8 @@ static int EsOutVaControlLocked( es_out_t *out, int i_query, va_list args )
                             !input_priv(p_sys->p_input)->b_out_pace_control ) )
             {
                 const vlc_tick_t i_pts_delay_base = p_sys->i_pts_delay - p_sys->i_pts_jitter;
+                msg_Dbg(p_sys->p_input, "pts delay and jitter : %"PRId64" %"PRId64"", p_sys->i_pts_delay, p_sys->i_pts_jitter);
+                //AIDEN
                 vlc_tick_t i_pts_delay = input_clock_GetJitter( p_pgrm->p_input_clock );
 
                 /* Avoid dangerously high value */
