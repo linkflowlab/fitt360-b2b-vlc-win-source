@@ -70,7 +70,6 @@ static void VoutDestructor(vlc_object_t *);
  * Late pictures having a delay higher than this value are thrashed.
  */
 #define VOUT_DISPLAY_LATE_THRESHOLD VLC_TICK_FROM_MS(20)
-//#define VOUT_DISPLAY_LATE_THRESHOLD VLC_TICK_FROM_MS(2000)
 
 /* Better be in advance when awakening than late... */
 #define VOUT_MWAIT_TOLERANCE VLC_TICK_FROM_MS(4)
