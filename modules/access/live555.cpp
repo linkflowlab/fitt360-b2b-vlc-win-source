@@ -93,7 +93,7 @@ static void Close( vlc_object_t * );
 #define FRAME_BUFFER_SIZE_LONGTEXT N_("RTSP start frame buffer size of the video " \
     "track, can be increased in case of broken pictures due " \
     "to too small buffer.")
-#define DEFAULT_FRAME_BUFFER_SIZE 400000
+#define DEFAULT_FRAME_BUFFER_SIZE 250000
 
 vlc_module_begin ()
     set_description( N_("RTP/RTSP/SDP demuxer (using Live555)" ) )
@@ -1978,7 +1978,7 @@ static void StreamRead( void *p_private, unsigned int i_size,
     i_pts &= INT64_C(0x00ffffffffffffff);
 
     /* Retrieve NPT for this pts */
-    tk->f_npt = tk->sub->getNormalPlayTime(pts);
+    tk->f_npt = tk->sub->getNormalPlayTime(ptsNow);
 
     if( tk->format == live_track_t::QUICKTIME_STREAM && tk->p_es == NULL )
     {
