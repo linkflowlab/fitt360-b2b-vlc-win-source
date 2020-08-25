@@ -1938,6 +1938,21 @@ static block_t *StreamParseAsf( demux_t *p_demux, live_track_t *tk,
 /*****************************************************************************
  *
  *****************************************************************************/
+#if defined(_WIN32)
+#include <chrono>
+
+int gettimeofdayWin(struct timeval* tp, struct timezone* tzp) {
+  namespace sc = std::chrono;
+  sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+  sc::seconds s = sc::duration_cast<sc::seconds>(d);
+  tp->tv_sec = s.count();
+  tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+  return 0;
+}
+
+#endif // _WIN32
+
 static void StreamRead( void *p_private, unsigned int i_size,
                         unsigned int i_truncated_bytes, struct timeval pts,
                         unsigned int duration )
@@ -1951,7 +1966,11 @@ static void StreamRead( void *p_private, unsigned int i_size,
 
     //msg_Dbg( p_demux, "pts: %"PRId64"", pts.tv_sec * 1000000 + pts.tv_usec );
     struct timeval ptsNow;
+#if defined(_WIN32)
+    gettimeofdayWin(&ptsNow, NULL);
+#else
     gettimeofday(&ptsNow, NULL);
+#endif
     vlc_tick_t i_pts = vlc_tick_from_timeval( &ptsNow );
     msg_Dbg( p_demux, "pts: %"PRId64"", ptsNow.tv_sec * 1000000 + ptsNow.tv_usec );
 
