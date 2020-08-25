@@ -1432,7 +1432,7 @@ static int Demux( demux_t *p_demux )
 
     if( b_send_pcr )
     {
-        msg_Err(p_demux, "AAAA");
+        //msg_Err(p_demux, "AAAA");
         vlc_tick_t i_minpcr = VLC_TICK_INVALID;
         bool b_need_flush = false;
 
@@ -1451,11 +1451,11 @@ static int Demux( demux_t *p_demux )
             if( i_minpcr == VLC_TICK_INVALID || ( tk->i_pcr != VLC_TICK_INVALID && i_minpcr > tk->i_pcr ) )
                 i_minpcr = tk->i_pcr;
         }
-        msg_Err(p_demux, "BBBB");
+        //msg_Err(p_demux, "BBBB");
 
         if( p_sys->i_pcr != VLC_TICK_INVALID && b_need_flush )
         {
-            msg_Err(p_demux, "CCCC");
+            //msg_Err(p_demux, "CCCC");
             es_out_Control( p_demux->out, ES_OUT_RESET_PCR );
             p_sys->i_pcr = i_minpcr;
             p_sys->f_npt = 0.;
@@ -1478,7 +1478,7 @@ static int Demux( demux_t *p_demux )
         {
             p_sys->i_pcr = __MAX(0, i_minpcr - PCR_OFF);
             if( p_sys->i_pcr != VLC_TICK_INVALID ) {
-                msg_Err(p_demux, "PCR: %"PRId64"", VLC_TICK_0 + p_sys->i_pcr);
+                msg_Dbg(p_demux, "PCR: %"PRId64"", VLC_TICK_0 + p_sys->i_pcr);
                 es_out_SetPCR( p_demux->out, VLC_TICK_0 + p_sys->i_pcr );
             }
         }
