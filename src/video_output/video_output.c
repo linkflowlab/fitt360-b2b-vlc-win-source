@@ -943,6 +943,9 @@ static int ThreadDisplayPreparePicture(vout_thread_t *vout, bool reuse, bool fra
                         continue;
                     } else if (late > 0) {
                         msg_Dbg(vout, "picture might be displayed late (missing %"PRId64" ms)", MS_FROM_VLC_TICK(late));
+                        picture_Release(decoded);
+                        vout_statistic_AddLost(&vout->p->statistic, 1);
+                        continue;
                     }
                 }
                 if (!VideoFormatIsCropArEqual(&decoded->format, &vout->p->filter.format))
