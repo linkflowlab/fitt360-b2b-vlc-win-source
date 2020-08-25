@@ -1416,12 +1416,13 @@ static int Demux( demux_t *p_demux )
         if( tk->waiting == 0 )
         {
             tk->waiting = 1;
+            msg_Err(p_demux, "waiting....");
             tk->sub->readSource()->getNextFrame( tk->p_buffer, tk->i_buffer,
                                           StreamRead, tk, StreamClose, tk );
         }
     }
-    /* Create a task that will be called if we wait more than 300ms */
-    task = p_sys->scheduler->scheduleDelayedTask( 300000, TaskInterruptData, p_demux );
+    /* Create a task that will be called if we wait more than 600ms */
+    task = p_sys->scheduler->scheduleDelayedTask( 600000, TaskInterruptData, p_demux );
 
     /* Do the read */
     p_sys->scheduler->doEventLoop( &p_sys->event_data );
@@ -1431,6 +1432,7 @@ static int Demux( demux_t *p_demux )
 
     if( b_send_pcr )
     {
+        msg_Err(p_demux, "AAAA");
         vlc_tick_t i_minpcr = VLC_TICK_INVALID;
         bool b_need_flush = false;
 
@@ -1449,9 +1451,11 @@ static int Demux( demux_t *p_demux )
             if( i_minpcr == VLC_TICK_INVALID || ( tk->i_pcr != VLC_TICK_INVALID && i_minpcr > tk->i_pcr ) )
                 i_minpcr = tk->i_pcr;
         }
+        msg_Err(p_demux, "BBBB");
 
         if( p_sys->i_pcr != VLC_TICK_INVALID && b_need_flush )
         {
+            msg_Err(p_demux, "CCCC");
             es_out_Control( p_demux->out, ES_OUT_RESET_PCR );
             p_sys->i_pcr = i_minpcr;
             p_sys->f_npt = 0.;
@@ -1474,7 +1478,7 @@ static int Demux( demux_t *p_demux )
         {
             p_sys->i_pcr = __MAX(0, i_minpcr - PCR_OFF);
             if( p_sys->i_pcr != VLC_TICK_INVALID ) {
-                //msg_Err(p_demux, "PCR: %"PRId64"", VLC_TICK_0 + p_sys->i_pcr);
+                msg_Err(p_demux, "PCR: %"PRId64"", VLC_TICK_0 + p_sys->i_pcr);
                 es_out_SetPCR( p_demux->out, VLC_TICK_0 + p_sys->i_pcr );
             }
         }
@@ -1504,16 +1508,17 @@ static int Demux( demux_t *p_demux )
             }
             return 1;
         }
-        msg_Err( p_demux, "no data received in 10s, aborting" );
+        msg_Err( p_demux, "no data received in 20s, aborting" );
         return 0;
     }
     else if( !p_sys->b_multicast && !p_sys->b_paused &&
              ( p_sys->i_no_data_ti > 34 ) )
     {
         /* EOF ? */
-        msg_Warn( p_demux, "no data received in 10s, eof ?" );
+        msg_Warn( p_demux, "no data received in 20s, eof ?" );
         return 0;
     }
+    msg_Dbg( p_demux, "no data count = %d, error = %s", p_sys->i_no_data_ti, p_sys->b_error ? "yes" : "no");
     return p_sys->b_error ? 0 : 1;
 }
 
@@ -1945,8 +1950,10 @@ static void StreamRead( void *p_private, unsigned int i_size,
     block_t        *p_block;
 
     //msg_Dbg( p_demux, "pts: %"PRId64"", pts.tv_sec * 1000000 + pts.tv_usec );
-
-    vlc_tick_t i_pts = vlc_tick_from_timeval( &pts );
+    struct timeval ptsNow;
+    gettimeofday(&ptsNow, NULL);
+    vlc_tick_t i_pts = vlc_tick_from_timeval( &ptsNow );
+    msg_Dbg( p_demux, "pts: %"PRId64"", ptsNow.tv_sec * 1000000 + ptsNow.tv_usec );
 
     /* XXX Beurk beurk beurk Avoid having negative value XXX */
     i_pts &= INT64_C(0x00ffffffffffffff);
