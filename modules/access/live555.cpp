@@ -1971,14 +1971,14 @@ static void StreamRead( void *p_private, unsigned int i_size,
 #else
     gettimeofday(&ptsNow, NULL);
 #endif
-    vlc_tick_t i_pts = vlc_tick_from_timeval( &ptsNow );
+    vlc_tick_t i_pts = vlc_tick_now();//vlc_tick_from_timeval( &ptsNow );
     //msg_Dbg( p_demux, "pts: %"PRId64"", ptsNow.tv_sec * 1000000 + ptsNow.tv_usec );
 
     /* XXX Beurk beurk beurk Avoid having negative value XXX */
     i_pts &= INT64_C(0x00ffffffffffffff);
 
     /* Retrieve NPT for this pts */
-    tk->f_npt = tk->sub->getNormalPlayTime(ptsNow);
+    tk->f_npt = tk->sub->getNormalPlayTime(pts);
 
     if( tk->format == live_track_t::QUICKTIME_STREAM && tk->p_es == NULL )
     {
