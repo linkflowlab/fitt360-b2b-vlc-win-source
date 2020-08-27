@@ -1320,6 +1320,7 @@ static void DecoderQueueSpu( decoder_t *p_dec, subpicture_t *p_spu )
 static void DecoderProcess( decoder_t *p_dec, block_t *p_block );
 static void DecoderDecode( decoder_t *p_dec, block_t *p_block )
 {
+    //msg_Err(p_dec, "DD");
     struct decoder_owner *p_owner = dec_get_owner( p_dec );
 
     int ret = p_dec->pf_decode( p_dec, p_block );
@@ -1356,6 +1357,7 @@ static void DecoderDecode( decoder_t *p_dec, block_t *p_block )
  */
 static void DecoderProcess( decoder_t *p_dec, block_t *p_block )
 {
+    //msg_Err(p_dec, "CC");
     struct decoder_owner *p_owner = dec_get_owner( p_dec );
 
     if( p_owner->error )
@@ -1400,6 +1402,7 @@ static void DecoderProcess( decoder_t *p_dec, block_t *p_block )
         return;
     }
 #endif
+    //msg_Err(p_dec, "BB");
     if( packetize )
     {
         block_t *p_packetized_block;
@@ -1409,6 +1412,7 @@ static void DecoderProcess( decoder_t *p_dec, block_t *p_block )
         while( (p_packetized_block =
                 p_packetizer->pf_packetize( p_packetizer, pp_block ) ) )
         {
+            //msg_Err(p_dec, "AA");
             if( !es_format_IsSimilar( &p_dec->fmt_in, &p_packetizer->fmt_out ) )
             {
                 msg_Dbg( p_dec, "restarting module due to input format change");
@@ -2114,6 +2118,7 @@ void input_DecoderDelete( decoder_t *p_dec )
  */
 void input_DecoderDecode( decoder_t *p_dec, block_t *p_block, bool b_do_pace )
 {
+    //msg_Err(p_dec, "EE");
     struct decoder_owner *p_owner = dec_get_owner( p_dec );
 
     vlc_fifo_Lock( p_owner->p_fifo );

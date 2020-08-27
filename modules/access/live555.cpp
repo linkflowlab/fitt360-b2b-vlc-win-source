@@ -728,7 +728,7 @@ static int SessionsSetup( demux_t *p_demux )
     int            i_return = VLC_SUCCESS;
     unsigned int   i_receive_buffer = 0;
     int            i_frame_buffer = DEFAULT_FRAME_BUFFER_SIZE;
-    unsigned const thresh = 200000; /* RTP reorder threshold .2 second (default .1) */
+    unsigned const thresh = 2000000; /* RTP reorder threshold .2 second (default .1) */
     const char     *p_sess_lang = NULL;
     const char     *p_lang;
 

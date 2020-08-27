@@ -999,6 +999,7 @@ static void EsOutSendEsEvent(es_out_t *out, es_out_id_t *es, int action)
 {
     es_out_sys_t *p_sys = container_of(out, es_out_sys_t, out);
     input_thread_t *p_input = p_sys->p_input;
+    //msg_Err(p_input, "HH");
 
     if (action == VLC_INPUT_ES_ADDED)
     {
@@ -2113,6 +2114,8 @@ static int EsOutSend( es_out_t *out, es_out_id_t *es, block_t *p_block )
     es_out_sys_t *p_sys = container_of(out, es_out_sys_t, out);
     input_thread_t *p_input = p_sys->p_input;
 
+    //msg_Err(p_input, "GG");
+
     assert( p_block->p_next == NULL );
 
     struct input_stats *stats = input_priv(p_input)->stats;
@@ -2169,6 +2172,7 @@ static int EsOutSend( es_out_t *out, es_out_id_t *es, block_t *p_block )
         }
     }
 
+    //msg_Err(p_input, "FF");
     /* Decode */
     if( es->p_dec_record )
     {
