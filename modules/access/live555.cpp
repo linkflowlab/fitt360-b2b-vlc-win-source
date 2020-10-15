@@ -530,7 +530,7 @@ static bool wait_Live555_response( demux_t *p_demux, int i_timeout = 0 /* ms */ 
     if( i_timeout > 0 )
     {
         /* Create a task that will be called if we wait more than timeout ms */
-        task = p_sys->scheduler->scheduleDelayedTask( i_timeout*1000,
+        task = p_sys->scheduler->scheduleDelayedTask( i_timeout,
                                                       TaskInterruptRTSP,
                                                       p_demux );
     }
