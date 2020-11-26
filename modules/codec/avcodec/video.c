@@ -1015,6 +1015,8 @@ static int DecodeBlock( decoder_t *p_dec, block_t **pp_block )
     else
         b_need_output_picture = false;
 
+    b_need_output_picture = var_InheritBool(p_dec, "avcodec-decode-picture");
+
     /* Change skip_frame config only if hurry_up is enabled */
     if( p_sys->b_hurry_up )
     {
