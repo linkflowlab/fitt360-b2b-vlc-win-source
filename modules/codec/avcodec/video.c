@@ -1010,9 +1010,9 @@ static int DecodeBlock( decoder_t *p_dec, block_t **pp_block )
 
     /* Defaults that if we aren't in prerolling, we want output picture
        same for if we are flushing (p_block==NULL) */
-    if( !p_block || !(p_block->i_flags & BLOCK_FLAG_PREROLL) )
-        b_need_output_picture = true;
-    else
+    if( !p_block || !(p_block->i_flags & BLOCK_FLAG_PREROLL) ) {
+        b_need_output_picture = var_InheritBool(p_dec, "avcodec-decode-picture");
+    } else
         b_need_output_picture = false;
 
     /* Change skip_frame config only if hurry_up is enabled */
