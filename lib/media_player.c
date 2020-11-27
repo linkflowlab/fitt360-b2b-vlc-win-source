@@ -801,7 +801,7 @@ libvlc_media_player_new( libvlc_instance_t *instance )
     var_Create(mp, "alpha-blend-enable-blend", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
 
     /* Special options to disable decoding dynamically*/
-    var_Create(mp, "avcodec-decode-picture", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
+    var_Create(mp, "avcodec-bypass-decoding", VLC_VAR_BOOL|VLC_VAR_DOINHERIT);
 
     mp->p_md = NULL;
     mp->state = libvlc_NothingSpecial;

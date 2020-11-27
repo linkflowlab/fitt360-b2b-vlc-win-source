@@ -140,7 +140,7 @@ vlc_module_begin ()
     add_string( "avcodec-options", NULL, AV_OPTIONS_TEXT, AV_OPTIONS_LONGTEXT, true )
 
     // Added for decode cancelling
-    add_bool("avcodec-decode-picture", true, "", "", true)
+    add_bool("avcodec-bypass-decoding", false, "", "", true)
 
 
 #ifdef ENABLE_SOUT

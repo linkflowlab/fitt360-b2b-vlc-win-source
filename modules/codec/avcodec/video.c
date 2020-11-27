@@ -1011,7 +1011,7 @@ static int DecodeBlock( decoder_t *p_dec, block_t **pp_block )
     /* Defaults that if we aren't in prerolling, we want output picture
        same for if we are flushing (p_block==NULL) */
     if( !p_block || !(p_block->i_flags & BLOCK_FLAG_PREROLL) ) {
-        b_need_output_picture = var_InheritBool(p_dec, "avcodec-decode-picture");
+        b_need_output_picture = !var_InheritBool(p_dec, "avcodec-bypass-decoding");
     } else
         b_need_output_picture = false;
 
@@ -1028,7 +1028,8 @@ static int DecodeBlock( decoder_t *p_dec, block_t **pp_block )
 
     if( !b_need_output_picture || p_sys->framedrop == FRAMEDROP_NONREF )
     {
-        p_context->skip_frame = __MAX( p_context->skip_frame, AVDISCARD_NONREF );
+        int maxVal = var_InheritBool(p_dec, "avcodec-bypass-decoding") ? AVDISCARD_ALL : AVDISCARD_NONREF;
+        p_context->skip_frame = __MAX( p_context->skip_frame, maxVal );
     }
 
     /*
